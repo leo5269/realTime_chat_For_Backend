@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>YouTube 聊天室</title>
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap");
+:root {
+  --bg: #ffffff; --surface: #f9f9f9; --border: #e5e5e5;
+  --yt-red: #ff0000; --yt-red-dark: #cc0000;
+  --text: #0f0f0f; --muted: #606060;
+  --own-bg: #065fd4; --other-bg: #f2f2f2;
+  --ai-color: #7c3aed;
+  --teacher-color: #b45309;
+  --teacher-bg: #fffbeb;
+  --teacher-border: #fcd34d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Noto Sans TC","Roboto",sans-serif; background: var(--bg); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.yt-icon { width: 28px; height: 20px; flex-shrink: 0; }
+.header-title { font-size: 1.4rem; font-weight: 700; color: var(--yt-red); letter-spacing: -0.01em; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; margin-left: auto; transition: background .3s; }
+.dot.on { background: #00c853; box-shadow: 0 0 5px #00c85388; }
+.status-bar { display: none; padding: 5px 14px; background: #0f0f0f; align-items: center; gap: 10px; flex-shrink: 0; }
+/* ===== 合併資訊列（展演狀態 | 表演者 | 幕次 同一列） ===== */
+.info-bar { display: none; flex-direction: row; align-items: center; gap: 6px; padding: 5px 14px; background: #12122a; border-bottom: 1px solid #2d2d4e; flex-shrink: 0; flex-wrap: wrap; }
+.info-bar.visible { display: flex; }
+.info-sep { color: #3d3d6e; font-size: .85rem; flex-shrink: 0; }
+.show-state-bar, .performer-bar, .scene-bar { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.performer-label, .scene-label { font-size: .73rem; color: #a0a0c0; }
+.performer-name { font-size: .82rem; font-weight: 700; color: #e0e0ff; }
+.scene-name     { font-size: .82rem; font-weight: 700; color: #c0c0f0; }
+.state-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.show-state-bar.idle   .state-dot { background: #888; }
+.show-state-bar.live   .state-dot { background: var(--yt-red); animation: blink 1.4s infinite; }
+.show-state-bar.ended  .state-dot { background: #555; }
+.state-text { font-size: .8rem; font-weight: 700; }
+.show-state-bar.idle   .state-text { color: #888; }
+.show-state-bar.live   .state-text { color: #ff6b6b; }
+.show-state-bar.ended  .state-text { color: #aaa; }
+.status-bar.visible { display: flex; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yt-red); animation: blink 1.4s infinite; flex-shrink: 0; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+.status-badge { font-size: .72rem; font-weight: 700; letter-spacing: .08em; padding: 2px 7px; border-radius: 3px; }
+.badge-live { background: var(--yt-red); color: #fff; }
+.badge-rec { background: #fff; color: #0f0f0f; transition: opacity .3s; }
+.badge-rec.inactive { opacity: 0.25; }
+#setup { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 20px; }
+.setup-icon { font-size: 3rem; }
+.setup-title { font-size: 1.15rem; font-weight: 700; text-align: center; }
+.setup-sub { font-size: .85rem; color: var(--muted); text-align: center; line-height: 1.5; }
+.ni { width: 100%; max-width: 320px; padding: 12px 16px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 4px; color: var(--text); font-size: 1rem; font-family: inherit; outline: none; transition: border-color .2s; }
+.ni:focus { border-color: var(--yt-red); }
+.btn-enter { width: 100%; max-width: 320px; padding: 12px; background: var(--yt-red); color: #fff; border: none; border-radius: 4px; font-size: .95rem; font-family: inherit; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: .05em; }
+.btn-enter:hover { background: var(--yt-red-dark); }
+#chat { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+.chat-header-strip { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.chat-label { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.viewer-count { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.viewer-count::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #00c853; box-shadow: 0 0 4px #00c85388; }
+.btn-leave { padding: 10px 20px; background: transparent; color: var(--muted); border: 1.5px solid var(--border); border-radius: 4px; font-size: 1.05rem; font-family: inherit; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: border-color .15s, color .15s; }
+.btn-leave:hover { border-color: var(--yt-red); color: var(--yt-red); }
+#adminPanel, #adminPanel2 {
+  display: none; flex-direction: column; gap: 8px; padding: 8px 12px;
+  background: #f3f0ff; border-bottom: 1px solid #d8b4fe; flex-shrink: 0;
+}
+#adminPanel2 { background: #f0f9ff; border-bottom-color: #bae6fd; }
+.admin-title { font-size: .75rem; font-weight: 700; color: var(--ai-color); text-transform: uppercase; letter-spacing: .05em; }
+.admin-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-input { flex: 1; min-width: 160px; padding: 7px 10px; border: 1.5px solid #d8b4fe; border-radius: 4px; font-size: .9rem; font-family: inherit; outline: none; background: #fff; }
+.admin-input:focus { border-color: var(--ai-color); }
+.btn-ai { padding: 8px 16px; border: none; border-radius: 4px; font-size: .9rem; font-family: inherit; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.btn-ai:active { opacity: .75; }
+.btn-trigger { background: var(--ai-color); color: #fff; }
+.btn-reset { background: #fff; color: #dc2626; border: 1.5px solid #dc2626 !important; }
+.btn-reset:hover { background: #fee2e2; }
+.btn-event { background: #fff; color: #0369a1; border: 1.5px solid #7dd3fc !important; font-size: .78rem; padding: 5px 10px; }
+.btn-event:hover { background: #f0f9ff; }
+.timer-status { font-size: .78rem; color: var(--ai-color); }
+
+/* ===== 老師快捷點評浮動工具列 ===== */
+#teacherBar {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  flex-direction: column;
+  background: #fff;
+  border-top: 2px solid var(--teacher-border);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+}
+#teacherBar.admin-visible { display: flex; }
+
+.teacher-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; background: var(--teacher-bg);
+  cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--teacher-border);
+}
+.teacher-toggle-label {
+  font-size: .8rem; font-weight: 700; color: var(--teacher-color);
+  display: flex; align-items: center; gap: 6px;
+}
+.teacher-toggle-arrow { font-size: .75rem; color: var(--teacher-color); transition: transform .25s; }
+.teacher-toggle-arrow.open { transform: rotate(180deg); }
+
+.teacher-btns {
+  display: flex; gap: 8px; padding: 10px 14px;
+  overflow-x: auto; flex-wrap: wrap;
+  max-height: 0; overflow: hidden;
+  transition: max-height .3s ease, padding .3s ease;
+  padding-top: 0; padding-bottom: 0;
+}
+.teacher-btns.open {
+  max-height: 300px;
+  padding-top: 10px; padding-bottom: 10px;
+}
+.teacher-btns::-webkit-scrollbar { display: none; }
+
+.tbtn {
+  padding: 9px 16px;
+  border: 1.5px solid var(--teacher-border);
+  border-radius: 99px;
+  background: var(--teacher-bg);
+  color: var(--teacher-color);
+  font-size: .88rem; font-family: inherit; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, transform .1s, border-color .15s;
+  flex-shrink: 0;
+}
+.tbtn:hover { background: #fef3c7; }
+.tbtn:active { transform: scale(.93); }
+@keyframes tbtn-sent {
+  0%   { background: #d1fae5; border-color: #34d399; color: #065f46; transform: scale(1.05); }
+  100% { background: var(--teacher-bg); border-color: var(--teacher-border); color: var(--teacher-color); transform: scale(1); }
+}
+.tbtn.sent { animation: tbtn-sent .5s ease forwards; }
+
+#msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth; }
+#msgs::-webkit-scrollbar { width: 4px; }
+#msgs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.msg-row { display: flex; align-items: baseline; gap: 6px; padding: 3px 4px; border-radius: 4px; transition: background .15s; animation: msgIn .15s ease; flex-wrap: wrap; }
+.msg-row:hover { background: var(--other-bg); }
+.msg-row.ai-msg { background: #faf5ff; }
+.msg-row.ai-msg:hover { background: #f3e8ff; }
+.msg-row.teacher-msg { background: var(--teacher-bg); border-left: 3px solid var(--teacher-border); padding-left: 8px; }
+.msg-row.teacher-msg:hover { background: #fef3c7; }
+.msg-row.admin2-msg { background: #f0f9ff; border-left: 3px solid #7dd3fc; padding-left: 8px; }
+.msg-row.admin2-msg:hover { background: #e0f2fe; }
+.msg-name.teacher { color: var(--teacher-color); }
+.msg-name.admin2 { color: #0369a1; }
+.teacher-badge {
+  font-size: .62rem; font-weight: 700;
+  background: var(--teacher-color); color: #fff;
+  padding: 1px 5px; border-radius: 3px;
+  letter-spacing: .04em; flex-shrink: 0; align-self: center;
+}
+@keyframes msgIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+.msg-time { font-size: .7rem; color: var(--muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.msg-name { font-size: .82rem; font-weight: 700; color: var(--yt-red); flex-shrink: 0; }
+.msg-name.own { color: var(--own-bg); }
+.msg-name.ai { color: var(--ai-color); }
+.msg-text { font-size: 1.1rem; color: var(--text); line-height: 1.4; word-break: break-word; }
+.msg-text.emoji-only { font-size: 1.8rem; line-height: 1.2; }
+.msg-mention { color: var(--own-bg); font-weight: 700; cursor: pointer; border-radius: 3px; padding: 0 2px; transition: background .15s; }
+.msg-mention:hover { background: #e0eaff; }
+@keyframes highlight-flash {
+  0%   { background: #bfdbfe; } 25%  { background: #ffffff; }
+  50%  { background: #bfdbfe; } 75%  { background: #ffffff; }
+  100% { background: #bfdbfe; }
+}
+.msg-row.flashing { border-radius: 6px; animation: highlight-flash 0.6s ease 5 forwards !important; }
+.sys { align-self: center; font-size: .72rem; color: var(--muted); background: var(--other-bg); padding: 3px 10px; border-radius: 99px; margin: 4px 0; }
+.ebar { display: flex; gap: 6px; padding: 8px 12px 4px; overflow-x: auto; flex-shrink: 0; border-top: 1px solid var(--border); }
+.ebar::-webkit-scrollbar { display: none; }
+.ebtn { font-size: 1.3rem; background: var(--other-bg); border: 1px solid var(--border); border-radius: 99px; padding: 5px 10px; cursor: pointer; flex-shrink: 0; transition: background .15s; }
+.ebtn:hover { background: var(--border); }
+.ebtn:active { transform: scale(.88); }
+.qbar { display: flex; gap: 6px; padding: 2px 12px 6px; overflow-x: auto; flex-shrink: 0; }
+.qbar::-webkit-scrollbar { display: none; }
+.qbtn { font-size: .85rem; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 99px; padding: 5px 13px; cursor: pointer; flex-shrink: 0; white-space: nowrap; transition: background .15s, border-color .15s; }
+.qbtn:hover { background: var(--other-bg); border-color: #aaa; }
+.qbtn:active { transform: scale(.93); }
+.qbtn:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+.rate-hint { font-size: .75rem; color: #e53e3e; padding: 0 14px 4px; display: none; flex-shrink: 0; }
+.rate-hint.visible { display: block; }
+.ibar { display: flex; gap: 8px; padding: 8px 12px 12px; background: var(--bg); border-top: 1px solid var(--border); flex-shrink: 0; align-items: flex-end; }
+textarea.mi { flex: 1; padding: 10px 12px; background: var(--other-bg); border: 1.5px solid var(--border); border-radius: 4px; color: var(--text); font-size: 1.05rem; font-family: inherit; resize: none; max-height: 90px; line-height: 1.4; outline: none; transition: border-color .2s; }
+textarea.mi:focus { border-color: var(--yt-red); background: var(--bg); }
+textarea.mi::placeholder { color: var(--muted); }
+.bsend { width: 40px; height: 40px; background: var(--yt-red); border: none; border-radius: 4px; color: #fff; font-size: 1rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.bsend:hover { background: var(--yt-red-dark); }
+.bsend:active { opacity: .8; }
+.bsend:disabled { opacity: .4; cursor: not-allowed; }
+.stats-panel { display: none; flex-direction: column; gap: 0; background: var(--bg); border-top: 2px solid var(--border); flex-shrink: 0; max-height: 180px; overflow-y: auto; }
+.stats-panel.visible { display: flex; }
+.stats-header { padding: 8px 14px 4px; font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+.stats-item { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; background: var(--bg); gap: 2px; }
+.stats-emoji { font-size: 1.3rem; line-height: 1; }
+.stats-count { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.stats-label { font-size: .65rem; color: var(--muted); }
+
+.idle-overlay { display: none; position: absolute; inset: 0; background: rgba(255,255,255,.85); z-index: 10; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.idle-overlay.visible { display: flex; }
+.idle-overlay-icon { font-size: 2.5rem; }
+.idle-overlay-text { font-size: 1rem; font-weight: 700; color: var(--muted); }
+.ibar.ended { background: #f5f5f5; }
+textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
+.ebtn:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="yt-icon" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="28" height="20" rx="4" fill="#FF0000"/>
+    <polygon points="11,5 11,15 20,10" fill="white"/>
+  </svg>
+  <span class="header-title">聊天室</span>
+  <div class="dot" id="dot"></div>
+</header>
+
+<div class="status-bar" id="statusBar">
+  <div class="status-dot"></div>
+  <span class="status-badge badge-live">LIVE</span>
+  <span class="status-badge badge-rec" id="recBadge">REC</span>
+</div>
+
+<div class="info-bar" id="infoBar">
+  <!-- 展演狀態 -->
+  <div class="show-state-bar idle" id="showStateBar">
+    <div class="state-dot"></div>
+    <span class="state-text" id="stateText">待機中</span>
+  </div>
+  <span class="info-sep">｜</span>
+  <!-- 表演者 -->
+  <div class="performer-bar" id="performerBar">
+    <span class="performer-label">🎭</span>
+    <span class="performer-name" id="performerName">尚未指定</span>
+  </div>
+  <span class="info-sep">｜</span>
+  <!-- 幕次 -->
+  <div class="scene-bar" id="sceneBar">
+    <span class="scene-label">🎬</span>
+    <span class="scene-name" id="sceneName">未設定</span>
+  </div>
+</div>
+
+<div id="setup">
+  <div class="setup-icon">💬</div>
+  <div class="setup-title">加入觀眾聊天室</div>
+  <div class="setup-sub">輸入你的暱稱後<br>就可以開始留言！</div>
+  <input class="ni" id="ni" type="text" placeholder="你的暱稱（例：小明）" maxlength="12" autocomplete="off">
+  <button class="btn-enter" onclick="enter()">進入聊天室</button>
+</div>
+
+<div id="chat">
+  <div class="chat-header-strip">
+    <span class="chat-label">即時聊天</span>
+    <span class="viewer-count" id="viewerCount">觀看人數：1</span>
+    <button class="btn-leave" onclick="leave()">← 離開聊天室</button>
+  </div>
+
+  <!-- yoko 老師：AI 控制台（快捷點評移到底部浮動工具列） -->
+  <div id="adminPanel">
+    <div class="admin-title">🤖 AI 機器人控制台</div>
+    <div class="admin-row">
+      <input class="admin-input" id="sceneHint" placeholder="當前場景提示（選填，例：學生正在示範端菜）" maxlength="60">
+    </div>
+    <div class="admin-row" style="flex-wrap:wrap;">
+      <button class="btn-ai btn-trigger" onclick="triggerAI()">⚡ 立即發言</button>
+      <button class="btn-ai btn-reset" onclick="resetChat()">🗑 重置聊天室</button>
+      <span class="timer-status" id="timerStatus"></span>
+    </div>
+  </div>
+
+  <!-- 朱大帥哥0719：展演控制台（快捷點評移到底部浮動工具列） -->
+  <div id="adminPanel2">
+    <div class="admin-title">🎭 展演控制台</div>
+    <div class="admin-row">
+      <input class="admin-input" id="performerInput" placeholder="目前表演者姓名（例：小明）" maxlength="20">
+      <button class="btn-ai" onclick="setPerformer()" style="white-space:nowrap">🎭 更新</button>
+    </div>
+    <div class="admin-row">
+      <input class="admin-input" id="sceneInput" placeholder="目前幕次（例：迎賓、帶位、送餐）" maxlength="20">
+      <button class="btn-ai" onclick="setScene()" style="white-space:nowrap">🎬 更新</button>
+    </div>
+    <div class="admin-row">
+      <button class="btn-ai" onclick="setShowState('idle')"  id="btnIdle">⏳ 待機中</button>
+      <button class="btn-ai" onclick="setShowState('live')"  id="btnLive">🔴 展演中</button>
+      <button class="btn-ai" onclick="setShowState('ended')" id="btnEnded">🏁 展演結束</button>
+    </div>
+  </div>
+
+  <div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="idle-overlay" id="idleOverlay">
+      <div class="idle-overlay-icon">⏳</div>
+      <div class="idle-overlay-text">展演即將開始，請稍候…</div>
+    </div>
+    <div id="msgs"></div>
+  </div>
+
+  <div class="stats-panel" id="statsPanel">
+    <div class="stats-header">📊 本輪展演統計</div>
+    <div class="stats-grid" id="statsGrid"></div>
+  </div>
+
+  <div class="ebar">
+    <button class="ebtn" onclick="semoji('👏')">👏</button>
+    <button class="ebtn" onclick="semoji('❤️')">❤️</button>
+    <button class="ebtn" onclick="semoji('😄')">😄</button>
+    <button class="ebtn" onclick="semoji('🎉')">🎉</button>
+    <button class="ebtn" onclick="semoji('👍')">👍</button>
+    <button class="ebtn" onclick="semoji('🔥')">🔥</button>
+    <button class="ebtn" onclick="semoji('😮')">😮</button>
+    <button class="ebtn" onclick="semoji('🥺')">🥺</button>
+    <button class="ebtn" onclick="semoji('💪')">💪</button>
+    <button class="ebtn" onclick="semoji('✨')">✨</button>
+  </div>
+  <div class="rate-hint" id="rateHint">⏳ 請稍後再發言</div>
+  <!-- qbar：只有一般觀眾才顯示，管理員由 showChat() 隱藏 -->
+  <div class="qbar" id="qbar">
+    <button class="qbtn" onclick="sendQuick('加油！💪')">加油</button>
+    <button class="qbtn" onclick="sendQuick('很棒！👏')">很棒</button>
+    <button class="qbtn" onclick="sendQuick('笑容很好看！😊')">笑容很好</button>
+    <button class="qbtn" onclick="sendQuick('聲音很清楚！👍')">聲音清楚</button>
+    <button class="qbtn" onclick="sendQuick('請再大聲一點！📢')">再大聲一點</button>
+  </div>
+
+  <div class="ibar" id="ibar">
+    <textarea class="mi" id="mi" placeholder="傳送訊息…" rows="1"
+      oninput="ar(this)"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+    <button class="bsend" id="sendBtn" onclick="send()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ===== 老師快捷點評浮動工具列（管理員專用，固定在畫面底部） ===== -->
+<div id="teacherBar">
+  <div class="teacher-toggle" onclick="toggleTeacherBar()">
+    <span class="teacher-toggle-label">
+      ✏️ 老師快捷點評
+      <span style="font-size:.7rem;font-weight:400;opacity:.7;">點此展開 / 收合</span>
+    </span>
+    <span class="teacher-toggle-arrow" id="teacherArrow">▲</span>
+  </div>
+  <div class="teacher-btns" id="teacherBtns">
+    <button class="tbtn" onclick="quickTeacher(this, '很好！繼續保持 👍')">很好 👍</button>
+    <button class="tbtn" onclick="quickTeacher(this, '注意站位 🧍')">注意站位 🧍</button>
+    <button class="tbtn" onclick="quickTeacher(this, '保持笑容 😊')">保持笑容 😊</button>
+    <button class="tbtn" onclick="quickTeacher(this, '日語再清楚一點 🗣')">日語再清楚 🗣</button>
+    <button class="tbtn" onclick="quickTeacher(this, '音量再大一點 📢')">音量再大 📢</button>
+    <button class="tbtn" onclick="quickTeacher(this, '眼神看向客人 👀')">眼神看客人 👀</button>
+    <button class="tbtn" onclick="quickTeacher(this, '動作很自然 ✨')">動作自然 ✨</button>
+    <button class="tbtn" onclick="quickTeacher(this, '鞠躬角度再深一點 🙇')">鞠躬再深 🙇</button>
+    <button class="tbtn" onclick="quickTeacher(this, '說話速度放慢 🐢')">說話放慢 🐢</button>
+    <button class="tbtn" onclick="quickTeacher(this, '非常棒！🎉')">非常棒 🎉</button>
+  </div>
+</div>
+
+<script>
+const ABLY_KEY = '4b0T5w.1DqtYQ:SY1t3uMjRY6UcSmMGKBSg938sYm1kZmMgvazhupgNq8';
+// 後端 API 網址：開發時用 localhost，部署後改成你的伺服器網址
+const BACKEND_URL = 'http://localhost:3000';
+const CH = 'dlt-chat';
+const STORAGE_KEY = 'dlt_chat_msgs';
+const MAX_STORED = 200;
+const AI_NAME = '🤖 DLT助理';
+const ADMIN_PASSWORD = 'yoko老師';
+const ADMIN2_PASSWORD = '朱大帥哥0719';
+const TIMER_INTERVAL = 60;
+
+let me = '', ablyChannel = null, isAdmin = false, isAdmin2 = false;
+const tabId = Math.random().toString(36).slice(2, 8);
+let stats = { thumb: 0, clap: 0, fire: 0, aiMsg: 0, userMsg: 0 };
+let statsActive = false;
+let isRecording = true;
+const PERFORMER_KEY = 'dlt_performer';
+const SCENE_KEY = 'dlt_scene';
+const SHOW_STATE_KEY = 'dlt_show_state';
+let showState = 'idle';
+let lastAIMessageTime = 0;
+let idleTimer = null;
+const onlineUsers = new Set();
+const IDLE_TIMEOUT = 5 * 60 * 1000;
+let timerOn = false, timerHandle = null, timerCountdown = 0, countdownHandle = null;
+let teacherBarOpen = false; // 預設收合
+
+// ===== 老師浮動工具列 =====
+function toggleTeacherBar() {
+  teacherBarOpen = !teacherBarOpen;
+  document.getElementById('teacherBtns').classList.toggle('open', teacherBarOpen);
+  document.getElementById('teacherArrow').classList.toggle('open', teacherBarOpen);
+  setTimeout(adjustChatPadding, 310); // 等 transition 結束
+}
+
+function showTeacherBar() {
+  document.getElementById('teacherBar').classList.add('admin-visible');
+  adjustChatPadding();
+}
+
+function hideTeacherBar() {
+  document.getElementById('teacherBar').classList.remove('admin-visible');
+  adjustChatPadding();
+}
+
+function adjustChatPadding() {
+  const bar = document.getElementById('teacherBar');
+  const ibar = document.getElementById('ibar');
+  if (!ibar) return;
+  if (bar && bar.classList.contains('admin-visible')) {
+    ibar.style.marginBottom = bar.offsetHeight + 'px';
+  } else {
+    ibar.style.marginBottom = '0';
+  }
+}
+
+function quickTeacher(btn, text) {
+  sendTeacher(text);
+  btn.classList.add('sent');
+  setTimeout(() => btn.classList.remove('sent'), 500);
+}
+
+document.getElementById('ni').addEventListener('keydown', e => { if(e.key==='Enter') enter(); });
+
+function enter() {
+  const n = document.getElementById('ni').value.trim();
+  if (!n) { document.getElementById('ni').focus(); return; }
+  me = n;
+  isAdmin  = (n === ADMIN_PASSWORD);
+  isAdmin2 = (n === ADMIN2_PASSWORD);
+  localStorage.setItem('dlt_chat_name', me);
+  localStorage.setItem('dlt_in_chat', '1');
+  showChat();
+  initAbly();
+}
+
+function showChat() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('chat').style.display = 'flex';
+  document.getElementById('infoBar').classList.add('visible');
+  if (isAdmin)  { document.getElementById('adminPanel').style.display  = 'flex'; showTeacherBar(); }
+  if (isAdmin2) { document.getElementById('adminPanel2').style.display = 'flex'; }
+  // 管理員不需要觀眾快捷按鈕列
+  if (isAdmin || isAdmin2) document.getElementById('qbar').style.display = 'none';
+  restoreMsgs();
+  updateStatusBar();
+  restorePerformer();
+  restoreScene();
+  startTimer();
+  if (!isAdmin && !isAdmin2) resetIdleTimer();
+  setTimeout(adjustChatPadding, 100);
+}
+
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => { alert('你已超過 5 分鐘沒有發言，已自動離開聊天室。'); leave(); }, IDLE_TIMEOUT);
+}
+
+function leave() {
+  clearTimeout(idleTimer);
+  localStorage.removeItem('dlt_in_chat');
+  document.getElementById('statusBar').classList.remove('visible');
+  document.getElementById('performerBar').classList.remove('visible');
+  document.getElementById('sceneBar').classList.remove('visible');
+  document.getElementById('showStateBar').classList.remove('visible');
+  if (ablyChannel) ablyChannel.publish('presence', { type: 'leave', name: me });
+  setTimeout(() => {
+    document.getElementById('chat').style.display = 'none';
+    document.getElementById('setup').style.display = 'flex';
+    if (!isAdmin && !isAdmin2) document.getElementById('ni').value = '';
+    else document.getElementById('ni').value = me;
+    document.getElementById('msgs').innerHTML = '';
+    document.getElementById('dot').classList.remove('on');
+    document.getElementById('adminPanel').style.display  = 'none';
+    document.getElementById('adminPanel2').style.display = 'none';
+    hideTeacherBar();
+    if (ablyChannel) { ablyChannel.unsubscribe(); ablyChannel = null; }
+    stopTimer();
+    onlineUsers.clear();
+    isAdmin2 = false; me = ''; isAdmin = false;
+  }, 300);
+}
+
+const savedName = localStorage.getItem('dlt_chat_name');
+if (savedName && localStorage.getItem('dlt_in_chat')) {
+  me = savedName;
+  isAdmin  = (savedName === ADMIN_PASSWORD);
+  isAdmin2 = (savedName === ADMIN2_PASSWORD);
+  showChat();
+  initAbly();
+}
+
+function saveMsg(d) {
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) {}
+  arr.push(d);
+  if (arr.length > MAX_STORED) arr = arr.slice(-MAX_STORED);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+function restoreMsgs() {
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) {}
+  arr.forEach(d => addMsg(d.n, d.t, d.e, d.ts, d.n === me, true, d.n === AI_NAME, d.triggerId, d.mid, d.isTeacher));
+}
+
+function initAbly() {
+  const ab = new Ably.Realtime({ key: ABLY_KEY });
+  ab.connection.on('disconnected', () => { document.getElementById('dot').classList.remove('on'); sys('連線中斷，重新連線中…'); });
+  ablyChannel = ab.channels.get(CH);
+  ab.connection.on('connected', () => {
+    document.getElementById('dot').classList.add('on');
+    sys('已連線 ✓');
+    restoreShowState();
+    onlineUsers.add(me);
+    updateViewerCount();
+    ablyChannel.publish('presence', { type: 'join', name: me, lastAITime: lastAIMessageTime });
+    setTimeout(() => { ablyChannel.publish('presence', { type: 'hello', name: me, tabId }); }, 500);
+  });
+  ablyChannel.subscribe('presence', m => {
+    const d = m.data;
+    if (d.type === 'join') {
+      onlineUsers.add(d.name);
+      if (d.name !== me) sys(`👋 ${d.name} 加入了聊天室`);
+      if (d.lastAITime && d.lastAITime > lastAIMessageTime) { lastAIMessageTime = d.lastAITime; timerCountdown = TIMER_INTERVAL; }
+    } else if (d.type === 'hello' && d.name !== me) {
+      ablyChannel.publish('presence', { type: 'here', name: me, targetTabId: d.tabId,
+        performer: localStorage.getItem(PERFORMER_KEY) || '',
+        scene: localStorage.getItem(SCENE_KEY) || '',
+        showState: showState });
+    } else if (d.type === 'here') {
+      if (d.targetTabId && d.targetTabId !== tabId) return;
+      onlineUsers.add(d.name);
+      if (d.performer) applyPerformer(d.performer);
+      if (d.scene !== undefined) applyScene(d.scene);
+      if (d.showState) applyShowState(d.showState);
+    } else if (d.type === 'leave') {
+      onlineUsers.delete(d.name);
+      if (d.name !== me) sys(`👋 ${d.name} 離開了聊天室`);
+    }
+    updateViewerCount();
+    if (isAdmin) updateAdminTimer();
+  });
+  ablyChannel.subscribe('reset', () => { clearChatUI(); });
+  ablyChannel.subscribe('performer', m => { applyPerformer(m.data.name); });
+  ablyChannel.subscribe('scene', m => { applyScene(m.data.name); });
+  ablyChannel.subscribe('showstate', m => { applyShowState(m.data.state); });
+  ablyChannel.subscribe('msg', m => {
+    const d = m.data;
+    saveMsg(d);
+    const incomingId = addMsg(d.n, d.t, d.e, d.ts, d.n === me, false, d.n === AI_NAME, d.triggerId, d.mid, d.isTeacher);
+    if (d.n === AI_NAME) { lastAIMessageTime = Date.now(); isAIPosting = false; timerCountdown = TIMER_INTERVAL; }
+    if (statsActive) {
+      if (d.n === AI_NAME) { stats.aiMsg++; }
+      else if (d.n !== ADMIN_PASSWORD && d.n !== ADMIN2_PASSWORD) {
+        if (d.e) { if (d.t==='👍') stats.thumb++; else if (d.t==='👏') stats.clap++; else if (d.t==='🔥') stats.fire++; }
+        else { stats.userMsg++; }
+      }
+    }
+    if (d.n !== AI_NAME && d.n !== ADMIN_PASSWORD && d.n !== ADMIN2_PASSWORD && !d.e) {
+      checkKeywordAndReply(d.n, d.t, incomingId, d.ts);
+    }
+  });
+}
+
+const STAGE_EVENTS = {
+  bow_correct: '這個鞠躬很標準！👍', greeting_ok: '日語招呼語很清楚！🎉',
+  voice_too_low: '請再大聲一點，讓大家聽清楚！📢', position_warning: '請注意與顧客的距離！🧍',
+};
+function handleStageEvent(eventName) {
+  const text = STAGE_EVENTS[eventName];
+  if (!text || !ablyChannel) return;
+  ablyChannel.publish('msg', { n: AI_NAME, t: text, e: false, ts: now() });
+}
+
+async function triggerAI() {
+  const btn = document.querySelector('.btn-trigger');
+  btn.disabled = true; btn.textContent = '⏳ 生成中…';
+  try {
+    const msg = await callOpenAI(document.getElementById('sceneHint').value.trim());
+    if (msg && ablyChannel) ablyChannel.publish('msg', { n: AI_NAME, t: msg, e: false, ts: now() });
+  } catch(err) { sys('AI 發言失敗：' + err.message); }
+  btn.disabled = false; btn.textContent = '⚡ 立即發言';
+}
+
+const KEYWORDS = ['DLT', 'dlt', '小幫手', 'DLT助手', 'dlt助手'];
+let isReplying = false, isAIPosting = false;
+
+function checkKeywordAndReply(senderName, text, triggerMsgId, triggerTs) {
+  if (!KEYWORDS.some(kw => text.includes(kw)) || isReplying) return;
+  isReplying = true;
+  replyToMessage(senderName, text, triggerMsgId, triggerTs).finally(() => { setTimeout(() => { isReplying = false; }, 1500); });
+}
+
+async function replyToMessage(senderName, userText, triggerMsgId, triggerTs) {
+  try {
+    const hint = document.getElementById('sceneHint') ? document.getElementById('sceneHint').value.trim() : '';
+    const prompt = `你是一個活潑熱情的數位劇場AI助理「DLT助理」，正在觀看學生展演。${hint ? '目前場景：' + hint + '。' : ''}
+觀眾「${senderName}」在聊天室對你說：「${userText}」
+請用繁體中文，友善自然地回覆他，30字以內，可加表情符號。只輸出回覆內容，不要加稱謂或說明。`;
+    const res = await fetch(`${BACKEND_URL}/api/ai-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, max_tokens: 80 })
+    });
+    if (!res.ok) throw new Error(`後端錯誤 ${res.status}`);
+    const { reply } = await res.json();
+    if (reply && ablyChannel) {
+      const aiTs = now();
+      ablyChannel.publish('msg', { n: AI_NAME, t: `@${senderName} ${reply}`, e: false, ts: aiTs,
+        mid: 'msg-ai-' + aiTs + '-' + Math.random().toString(36).slice(2,5), triggerId: triggerMsgId });
+    }
+  } catch(err) { console.error('關鍵字回覆失敗:', err); }
+}
+
+async function callOpenAI(hint) {
+  const prompt = `你是一個活潑熱情的數位劇場AI助理，正在觀看學生的展演表演。${hint ? '目前場景：' + hint + '。' : ''}
+請用繁體中文，以觀眾的角度，發一則簡短熱情的鼓勵留言（20字以內），可以加表情符號，語氣要自然像真實觀眾，稱呼表演者為「同學」。只輸出留言內容，不要加任何說明。`;
+  const res = await fetch(`${BACKEND_URL}/api/ai-chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, max_tokens: 60 })
+  });
+  if (!res.ok) throw new Error(`後端 API 錯誤 ${res.status}`);
+  const { reply } = await res.json();
+  return reply;
+}
+
+function updateAdminTimer() {
+  if (!isAdmin) return;
+  const hasAudience = [...onlineUsers].some(n => n !== ADMIN_PASSWORD && n !== ADMIN2_PASSWORD);
+  if (!hasAudience && timerOn) stopTimer();
+  else if (hasAudience && !timerOn) startTimer();
+}
+function startTimer() {
+  if (timerOn) return;
+  timerOn = true; timerCountdown = TIMER_INTERVAL; updateCountdown();
+  countdownHandle = setInterval(() => { timerCountdown--; updateCountdown(); if (timerCountdown <= 0) { timerCountdown = TIMER_INTERVAL; triggerAISilent(); } }, 1000);
+}
+function stopTimer() { timerOn = false; clearInterval(countdownHandle); const el = document.getElementById('timerStatus'); if (el) el.textContent = ''; }
+function updateCountdown() { const el = document.getElementById('timerStatus'); if (el) el.textContent = timerOn ? `下次發言：${timerCountdown}s` : ''; }
+async function triggerAISilent() {
+  if (showState !== 'live') { timerCountdown = TIMER_INTERVAL; return; }
+  const audienceOnly = [...onlineUsers].filter(n => n !== ADMIN_PASSWORD && n !== ADMIN2_PASSWORD);
+  if (audienceOnly.length === 0) { timerCountdown = TIMER_INTERVAL; return; }
+  const yokoOnline = onlineUsers.has(ADMIN_PASSWORD);
+  if (yokoOnline && !isAdmin) return;
+  if (!yokoOnline && !isAdmin) { const students = audienceOnly.sort(); if (students[0] !== me) return; }
+  if (isAIPosting) return;
+  isAIPosting = true;
+  try {
+    const hint = document.getElementById('sceneHint') ? document.getElementById('sceneHint').value.trim() : '';
+    const msg = await callOpenAI(hint);
+    if (msg && ablyChannel) ablyChannel.publish('msg', { n: AI_NAME, t: msg, e: false, ts: now() });
+  } catch(e) { /* 靜默失敗 */ } finally { isAIPosting = false; }
+}
+
+function now() { const d = new Date(); return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0'); }
+
+const RATE_LIMIT_MS = 3000;
+let lastSentTime = 0, rateHintTimer = null;
+function canSend() {
+  if (isAdmin || isAdmin2) return true;
+  const now_ms = Date.now();
+  if (now_ms - lastSentTime < RATE_LIMIT_MS) { showRateHint(); return false; }
+  lastSentTime = now_ms; return true;
+}
+function showRateHint() {
+  const el = document.getElementById('rateHint');
+  if (!el) return;
+  el.classList.add('visible');
+  clearTimeout(rateHintTimer);
+  rateHintTimer = setTimeout(() => el.classList.remove('visible'), 1500);
+}
+
+function sendTeacher(text) {
+  if (!ablyChannel) return;
+  const ts_ = now();
+  ablyChannel.publish('msg', { n: me, t: text, e: false, ts: ts_, mid: 'msg-' + ts_ + '-' + Math.random().toString(36).slice(2,5), isTeacher: true });
+}
+function sendQuick(text) {
+  if (!ablyChannel || (!isAdmin && !isAdmin2 && (showState==='ended'||showState==='idle')) || !canSend()) return;
+  const ts_ = now();
+  ablyChannel.publish('msg', { n: me, t: text, e: false, ts: ts_, mid: 'msg-' + ts_ + '-' + Math.random().toString(36).slice(2,5) });
+  if (!isAdmin && !isAdmin2) resetIdleTimer();
+}
+function send() {
+  const el = document.getElementById('mi'); const t = el.value.trim();
+  if (!t || !ablyChannel || (!isAdmin && !isAdmin2 && (showState==='ended'||showState==='idle')) || !canSend()) return;
+  const ts_ = now(); const mid = 'msg-' + ts_ + '-' + me.slice(0,4) + '-' + Math.random().toString(36).slice(2,5);
+  ablyChannel.publish('msg', { n: me, t, e: false, ts: ts_, mid });
+  resetIdleTimer(); el.value = ''; el.style.height = 'auto';
+}
+function semoji(em) {
+  if (!ablyChannel || !canSend()) return;
+  const ts_e = now(); const mid_e = 'msg-' + ts_e + '-' + me.slice(0,4) + '-' + Math.random().toString(36).slice(2,5);
+  ablyChannel.publish('msg', { n: me, t: em, e: true, ts: ts_e, mid: mid_e });
+  resetIdleTimer();
+}
+
+function addMsg(name, text, isEmoji, ts, own, isRestore, isAI, triggerId, mid, isTeacher) {
+  const msgs = document.getElementById('msgs');
+  const row = document.createElement('div');
+  const msgId = mid || ('msg-fallback-' + Math.random().toString(36).slice(2,8));
+  row.id = msgId;
+  row.className = 'msg-row' + (isAI ? ' ai-msg' : (isTeacher || name === ADMIN_PASSWORD) ? ' teacher-msg' : name === ADMIN2_PASSWORD ? ' admin2-msg' : '');
+  if (isRestore) row.style.animation = 'none';
+
+  const timeEl = document.createElement('span'); timeEl.className = 'msg-time'; timeEl.textContent = ts || ''; row.appendChild(timeEl);
+  const nameEl = document.createElement('span');
+  nameEl.className = 'msg-name' + (own ? ' own' : '') + (isAI ? ' ai' : (isTeacher || name === ADMIN_PASSWORD) ? ' teacher' : name === ADMIN2_PASSWORD ? ' admin2' : '');
+  nameEl.textContent = name; row.appendChild(nameEl);
+
+  // 身份標籤：老師快捷點評 或 yoko老師本人 → 老師；朱大帥哥0719 → 管理員
+  if (isTeacher || name === ADMIN_PASSWORD) {
+    const badge = document.createElement('span'); badge.className = 'teacher-badge'; badge.textContent = '老師'; row.appendChild(badge);
+  } else if (name === ADMIN2_PASSWORD) {
+    const badge = document.createElement('span'); badge.className = 'teacher-badge'; badge.style.background = '#0369a1'; badge.textContent = '管理員'; row.appendChild(badge);
+  }
+
+  const textEl = document.createElement('span'); textEl.className = 'msg-text' + (isEmoji ? ' emoji-only' : '');
+  const mentionMatch = !isEmoji && text.match(/^(@\S+)([\s\S]*)$/);
+  if (mentionMatch) {
+    const mention = document.createElement('span'); mention.className = 'msg-mention'; mention.textContent = mentionMatch[1];
+    mention.addEventListener('click', () => {
+      const senderName = mentionMatch[1].slice(1);
+      const allRows = Array.from(document.querySelectorAll('.msg-row'));
+      const thisIndex = allRows.indexOf(row);
+      for (let i = thisIndex - 1; i >= 0; i--) {
+        const ns = allRows[i].querySelector('.msg-name');
+        if (ns && ns.textContent === senderName) { flashRow(allRows[i].id); return; }
+      }
+    });
+    textEl.appendChild(mention); textEl.appendChild(document.createTextNode(mentionMatch[2]));
+  } else { textEl.textContent = text; }
+  row.appendChild(textEl);
+  msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
+  return msgId;
+}
+
+function flashRow(msgId) {
+  const row = document.getElementById(msgId); if (!row) return;
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.remove('flashing'); void row.offsetWidth; row.classList.add('flashing');
+  setTimeout(() => row.classList.remove('flashing'), 3000);
+}
+
+function resetChat() {
+  if (!confirm('確定要清空所有人的聊天室內容嗎？')) return;
+  ablyChannel.publish('reset', { by: me }); clearChatUI();
+}
+function clearChatUI() { document.getElementById('msgs').innerHTML = ''; localStorage.removeItem(STORAGE_KEY); sys('聊天室已重置'); }
+function updateViewerCount() { const el = document.getElementById('viewerCount'); if (el) el.textContent = `觀看人數：${onlineUsers.size}`; }
+
+const STATE_LABELS = { idle: '待機中', live: '展演中', ended: '展演結束' };
+function applyShowState(state) {
+  const prevState = showState; showState = state; localStorage.setItem(SHOW_STATE_KEY, state);
+  if (state === 'live') { stats = { thumb:0,clap:0,fire:0,aiMsg:0,userMsg:0 }; statsActive = true; document.getElementById('statsPanel').classList.remove('visible'); }
+  else if (state === 'ended') { statsActive = false; if (prevState === 'live') renderStats(); }
+  else if (state === 'idle') { statsActive = false; document.getElementById('statsPanel').classList.remove('visible'); }
+  const bar = document.getElementById('showStateBar'); const txt = document.getElementById('stateText');
+  const mi = document.getElementById('mi'); const sendBtn = document.getElementById('sendBtn'); const overlay = document.getElementById('idleOverlay');
+  if (!bar) return;
+  bar.className = `show-state-bar ${state}`; txt.textContent = STATE_LABELS[state] || state;
+  if (me) document.getElementById('infoBar').classList.add('visible');
+  overlay.classList.toggle('visible', state === 'idle');
+  const isEnded = state==='ended', isIdle = state==='idle', isManager = isAdmin||isAdmin2;
+  mi.disabled = !isManager && (isEnded||isIdle); sendBtn.disabled = !isManager && (isEnded||isIdle);
+  mi.placeholder = isEnded ? '展演已結束，無法發言' : isIdle ? '展演尚未開始…' : '傳送訊息…';
+  document.querySelectorAll('.ebtn').forEach(b => b.disabled = !isManager && (isEnded||isIdle));
+  document.querySelectorAll('.qbtn').forEach(b => b.disabled = !isManager && (isEnded||isIdle));
+  document.querySelector('.ibar').classList.toggle('ended', isEnded && !isManager);
+  if (isAdmin2) { ['idle','live','ended'].forEach(s => { const btn = document.getElementById('btn'+s.charAt(0).toUpperCase()+s.slice(1)); if(btn){btn.style.fontWeight=s===state?'900':'';btn.style.outline=s===state?'2px solid var(--ai-color)':'';} }); }
+}
+
+function renderStats() {
+  const panel = document.getElementById('statsPanel'); const grid = document.getElementById('statsGrid');
+  if (!panel||!grid) return;
+  const items = [
+    {emoji:'👍',count:stats.thumb,label:'讚'},{emoji:'👏',count:stats.clap,label:'掌聲'},
+    {emoji:'🔥',count:stats.fire,label:'熱情'},{emoji:'🤖',count:stats.aiMsg,label:'AI 訊息'},{emoji:'💬',count:stats.userMsg,label:'觀眾留言'},
+  ];
+  grid.innerHTML = items.map(i => `<div class="stats-item"><span class="stats-emoji">${i.emoji}</span><span class="stats-count">${i.count}</span><span class="stats-label">${i.label}</span></div>`).join('');
+  panel.classList.add('visible'); panel.scrollIntoView({behavior:'smooth',block:'end'});
+}
+
+function setShowState(state) { applyShowState(state); if (ablyChannel) ablyChannel.publish('showstate', { state }); }
+function restoreShowState() { applyShowState(localStorage.getItem(SHOW_STATE_KEY) || 'idle'); }
+function applyScene(name) {
+  const el = document.getElementById('sceneName'); if (!el) return;
+  el.textContent = name && name.trim() ? name.trim() : '未設定';
+  localStorage.setItem(SCENE_KEY, name ? name.trim() : '');
+  if (me) document.getElementById('infoBar').classList.add('visible');
+}
+function restoreScene() { const saved = localStorage.getItem(SCENE_KEY)||''; applyScene(saved); if(isAdmin2) document.getElementById('sceneInput').value=saved; }
+function setScene() { const name=document.getElementById('sceneInput').value.trim(); applyScene(name); if(ablyChannel) ablyChannel.publish('scene',{name}); }
+function applyPerformer(name) {
+  const el = document.getElementById('performerName'); if (!el) return;
+  el.textContent = name && name.trim() ? name.trim() : '尚未指定';
+  localStorage.setItem(PERFORMER_KEY, name ? name.trim() : '');
+  if (me) document.getElementById('infoBar').classList.add('visible');
+}
+function restorePerformer() { const saved=localStorage.getItem(PERFORMER_KEY)||''; applyPerformer(saved); if(isAdmin2) document.getElementById('performerInput').value=saved; }
+function setPerformer() { const name=document.getElementById('performerInput').value.trim(); applyPerformer(name); if(ablyChannel) ablyChannel.publish('performer',{name}); }
+function updateStatusBar() { document.getElementById('statusBar').classList.toggle('visible',!!me); document.getElementById('recBadge').classList.toggle('inactive',!isRecording); }
+function sys(t) { const msgs=document.getElementById('msgs'); const el=document.createElement('div'); el.className='sys'; el.textContent=t; msgs.appendChild(el); msgs.scrollTop=msgs.scrollHeight; }
+function ar(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
+
+window.addEventListener('resize', adjustChatPadding);
+window.addEventListener('beforeunload', () => { if (ablyChannel && me) ablyChannel.publish('presence', { type: 'leave', name: me }); });
+</script>
+</body>
+</html>

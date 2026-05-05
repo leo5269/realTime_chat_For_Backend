@@ -217,6 +217,13 @@ ablyChannel.subscribe('presence', (msg) => {
   if (!d) return;
   if (d.type === 'join' || d.type === 'here') {
     serverOnlineUsers.add(d.name);
+    // ── 新用戶加入時，廣播目前展演狀態讓他同步（late join sync）──
+    const state = getAgentState(currentSessionId);
+    setTimeout(() => {
+      if (state.showState)    ablyChannel.publish('showstate', { state: state.showState });
+      if (state.currentScene) ablyChannel.publish('scene',     { name: state.currentScene });
+      if (state.group)        ablyChannel.publish('performer', { name: state.group });
+    }, 800); // 稍微延遲，確保新用戶 Ably 已完全連線
   } else if (d.type === 'leave') {
     serverOnlineUsers.delete(d.name);
   }

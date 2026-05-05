@@ -339,6 +339,9 @@ ablyChannel.subscribe('performance', (msg) => {
 const DECISION_INTERVAL = 12000;
 
 async function runDecisionLoop() {
+  if (agentLoopRunning) return; // 已在執行中，跳過這次避免競爭
+  agentLoopRunning = true;
+  try {
   const sessionId = currentSessionId;
   const state = getAgentState(sessionId);
 
@@ -430,11 +433,14 @@ async function runDecisionLoop() {
     }
   } catch (err) {
     console.error('[Agent] decision loop 錯誤:', err.message);
+  } finally {
+    agentLoopRunning = false;
   }
 }
 
-let agentLoopActive = false;
-let agentLoopTimer  = null;
+let agentLoopActive  = false;
+let agentLoopTimer   = null;
+let agentLoopRunning = false; // 防止同時跑兩次
 
 function startAgentLoop() {
   if (agentLoopActive) return;

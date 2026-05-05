@@ -257,7 +257,7 @@ ${focusLine}
   風格C：感受分享式，例如「身為觀眾感覺很舒服」「這樣的服務方式讓人印象深刻」
   風格D：YouTuber 熱情式，例如「欸這個動作超重要！」「這裡要特別看仔細！」
   風格E：提醒觀眾式，例如「這個細節容易被忽略」「這裡如果做到位觀眾會更容易看懂」
-${performer && eventType !== 'narration_started' && eventType !== 'audience_focus' ? '重要：留言開頭必須先說「' + performer + '，」再接觀眾式回應。' : ''}
+${performer && eventType !== 'narration_started' && eventType !== 'audience_focus' ? '重要：留言開頭必須先說「' + performer + '，」再接觀眾式回應。' : (eventType === 'narration_started' || eventType === 'audience_focus') ? '重要：這則留言禁止提及任何人名，只對觀眾說話。' : ''}
 只輸出留言內容，不要加任何說明。`;
 
   const systemPrompt = `你是活潑熱情的數位劇場AI助理「DLT助理」，扮演觀眾代理（audience proxy）角色，全程觀看2026健行餐旅應用日語服務展演。

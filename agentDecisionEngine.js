@@ -231,16 +231,13 @@ function buildStageEventPrompt(ctx) {
     reception ? `櫃台接待：${reception}` : '',
   ].filter(Boolean).join('，');
 
-  // ── 依 eventType 給 AI 不同的發言方向提示 ──
-  const eventHints = {
-    narration_started:  '解說剛開始，可以提醒觀眾注意本幕的說明重點。',
-    serving_started:    '上菜動作正在進行，可以提醒觀眾注意上菜的服務細節。',
-    key_action_done:    '學生剛完成本幕關鍵動作，可以用觀眾角度給予正向回應。',
-    voice_low:          '學生聲音偏小，可以從觀眾角度提醒這個細節影響了聽清楚的感受。',
-    position_reminder:  '學生站位或與客人距離需要留意，可以從觀眾角度提醒這個細節。',
-    audience_focus:     '可以提醒觀眾注意本幕設定的專業重點。',
-  };
-  const eventHint = eventHints[eventType] || `目前展演事件：${eventLabel}。`;
+  // ── 直接使用 eventLabel（已包含幕次專用描述），不用固定 eventHints 覆蓋 ──
+  // eventLabel 來自前端按鈕，已根據幕次設計，例如：
+  // 第一幕：「解說開始，請觀眾注意開場介紹重點」
+  // 第四幕：「送餐服務生正在進行上菜動作」
+  const eventHint = eventLabel
+    ? `${eventLabel}`
+    : (eventType ? `目前展演事件類型：${eventType}` : '展演事件觸發');
 
   const focusLine = audienceFocus
     ? `本幕觀眾注意重點：「${audienceFocus}」。請優先圍繞這個重點發言。`
@@ -252,10 +249,15 @@ ${focusLine}
 請用觀眾的角度，發一則 20–30 字內的留言（繁體中文），不要加表情符號。
 語氣要求：
 - 你是觀眾代理，不是老師，不是評分者
-- 用「大家可以注意……」「這裡……」「觀眾可以留意……」等觀眾語氣
 - 不要說「錯誤」「不合格」「標準答案」等評分語氣
 - 不要假裝自己看到了沒有被提供的畫面細節
-${performer ? '重要：留言開頭必須先說「' + performer + '，」再接觀眾式回應，例如「' + performer + '，大家可以注意這裡……」' : ''}
+- 每次請隨機選擇一種風格，讓留言有變化，不要每次都說「大家可以注意」：
+  風格A：直接觀察式，例如「這裡的動作很細心」「剛才那個細節做到位了」
+  風格B：提問引導式，例如「有沒有注意到剛才的服務細節？」「大家有看到嗎？」
+  風格C：感受分享式，例如「身為觀眾感覺很舒服」「這樣的服務方式讓人印象深刻」
+  風格D：YouTuber 熱情式，例如「欸這個動作超重要！」「這裡要特別看仔細！」
+  風格E：提醒觀眾式，例如「這個細節容易被忽略」「這裡如果做到位觀眾會更容易看懂」
+${performer ? '重要：留言開頭必須先說「' + performer + '，」再接觀眾式回應。' : ''}
 只輸出留言內容，不要加任何說明。`;
 
   const systemPrompt = `你是活潑熱情的數位劇場AI助理「DLT助理」，扮演觀眾代理（audience proxy）角色，全程觀看2026健行餐旅應用日語服務展演。

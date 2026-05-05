@@ -400,13 +400,8 @@ textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
   <!-- 展演事件提示（朱大帥哥0719 才看得到，human-in-the-loop teacher cue）-->
   <div class="stage-event-bar" id="stageEventBar">
     <div class="stage-event-title">🎯 展演事件提示（AI 事件觸發）</div>
-    <div class="stage-event-btns">
-      <button class="btn-stage" onclick="sendStageEvent('narration_started','解說開始，請觀眾注意本幕重點')">📢 解說開始</button>
-      <button class="btn-stage" onclick="sendStageEvent('serving_started','學生正在進行上菜動作')">🍽 開始上菜</button>
-      <button class="btn-stage" onclick="sendStageEvent('key_action_done','學生完成了本幕關鍵動作')">✅ 關鍵動作完成</button>
-      <button class="btn-stage" onclick="sendStageEvent('voice_low','學生聲音偏小，觀眾可能聽不清楚')">🔇 聲音偏小</button>
-      <button class="btn-stage" onclick="sendStageEvent('position_reminder','學生需要注意站位或與客人的距離')">📍 站位提醒</button>
-      <button class="btn-stage" onclick="sendStageEvent('audience_focus','提醒觀眾注意本幕設定的專業重點')">👁 觀眾重點提醒</button>
+    <div class="stage-event-btns" id="stageEventBtns">
+      <!-- 由 updateStageEventButtons() 根據幕次動態產生 -->
     </div>
   </div>
 
@@ -1095,6 +1090,8 @@ function applyScene(name) {
   el.textContent = name && name.trim() ? name.trim() : '未設定';
   localStorage.setItem(SCENE_KEY, name ? name.trim() : '');
   if (me) document.getElementById('infoBar').classList.add('visible');
+  // ── 根據新幕次更新事件按鈕 ──
+  updateStageEventButtons(name ? name.trim() : '');
 }
 function restoreScene() { const saved = localStorage.getItem(SCENE_KEY)||''; applyScene(saved); if(isAdmin2) document.getElementById('sceneInput').value=saved; }
 function setScene() {
@@ -1123,6 +1120,81 @@ function showAdminUpdateModal() {
       `本幕觀眾注意重點：<span>${focus}</span>`;
   }
   document.getElementById('adminUpdateModal').classList.add('visible');
+}
+
+// ── 每幕對應的展演事件按鈕（根據劇本學習目標設計）──
+const SCENE_STAGE_EVENTS = {
+  '第一幕': [
+    { type: 'narration_started',  label: '解說開始，請觀眾注意開場介紹重點',         icon: '📢', name: '解說開始' },
+    { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚台詞',       icon: '🔇', name: '聲音偏小' },
+    { type: 'key_action_done',    label: '所有人いらっしゃいませ齊聲完成',            icon: '✅', name: '齊聲完成' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+  '第二幕': [
+    { type: 'narration_started',  label: '解說開始，請觀眾注意接待禮儀重點',         icon: '📢', name: '解說開始' },
+    { type: 'key_action_done',    label: '櫃台接待完成迎客動作，引導客人入座',        icon: '✅', name: '關鍵動作完成' },
+    { type: 'position_reminder',  label: '學生需要注意與客人的站位距離',              icon: '📍', name: '站位提醒' },
+    { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚日語台詞',   icon: '🔇', name: '聲音偏小' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+  '第三幕': [
+    { type: 'narration_started',  label: '解說開始，請觀眾注意點餐流程重點',         icon: '📢', name: '解說開始' },
+    { type: 'key_action_done',    label: '點餐服務生完成確認點餐並推薦料理',          icon: '✅', name: '關鍵動作完成' },
+    { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚點餐台詞',   icon: '🔇', name: '聲音偏小' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+  '第四幕': [
+    { type: 'serving_started',    label: '送餐服務生正在進行上菜動作',               icon: '🍽', name: '開始上菜' },
+    { type: 'key_action_done',    label: '送餐服務生完成鞠躬並提醒客人料理很燙',     icon: '✅', name: '關鍵動作完成' },
+    { type: 'position_reminder',  label: '學生需要注意從客人右側上菜的站位',          icon: '📍', name: '站位提醒' },
+    { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚上菜台詞',   icon: '🔇', name: '聲音偏小' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+  '第五幕': [
+    { type: 'narration_started',  label: '解說開始，請觀眾注意突發事件處理重點',     icon: '📢', name: '解說開始' },
+    { type: 'key_action_done',    label: '送餐服務生完成道歉並提出解決方案',          icon: '✅', name: '關鍵動作完成' },
+    { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚道歉台詞',   icon: '🔇', name: '聲音偏小' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+  '第六幕': [
+    { type: 'narration_started',  label: '解說開始，請觀眾注意結帳送客禮儀重點',     icon: '📢', name: '解說開始' },
+    { type: 'key_action_done',    label: '櫃台接待完成結帳流程並禮貌送客',            icon: '✅', name: '關鍵動作完成' },
+    { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚道別台詞',   icon: '🔇', name: '聲音偏小' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+  '第七幕': [
+    { type: 'narration_started',  label: '解說開始，請觀眾注意學生對未來職涯的詮釋', icon: '📢', name: '解說開始' },
+    { type: 'key_action_done',    label: '學生完成自我表現，詮釋未來工作場景',        icon: '✅', name: '關鍵動作完成' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+  '第八幕': [
+    { type: 'key_action_done',    label: '所有人完成謝幕，展演圓滿結束',              icon: '✅', name: '謝幕完成' },
+    { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',            icon: '👁', name: '觀眾重點提醒' },
+  ],
+};
+
+// ── 預設按鈕（幕次未設定時顯示）──
+const DEFAULT_STAGE_EVENTS = [
+  { type: 'narration_started',  label: '解說開始，請觀眾注意本幕重點',     icon: '📢', name: '解說開始' },
+  { type: 'key_action_done',    label: '學生完成了本幕關鍵動作',            icon: '✅', name: '關鍵動作完成' },
+  { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚',   icon: '🔇', name: '聲音偏小' },
+  { type: 'position_reminder',  label: '學生需要注意站位或與客人的距離',   icon: '📍', name: '站位提醒' },
+  { type: 'audience_focus',     label: '提醒觀眾注意本幕設定的專業重點',   icon: '👁', name: '觀眾重點提醒' },
+];
+
+// ── 根據幕次更新事件按鈕 ──
+function updateStageEventButtons(scene) {
+  if (!isAdmin2) return;
+  const container = document.getElementById('stageEventBtns');
+  if (!container) return;
+
+  // 從幕次字串萃取幕次關鍵字，例如「第四幕 上菜」→「第四幕」
+  const sceneKey = Object.keys(SCENE_STAGE_EVENTS).find(k => scene && scene.includes(k));
+  const events   = sceneKey ? SCENE_STAGE_EVENTS[sceneKey] : DEFAULT_STAGE_EVENTS;
+
+  container.innerHTML = events.map(e =>
+    `<button class="btn-stage" onclick="sendStageEvent('${e.type}','${e.label}')">${e.icon} ${e.name}</button>`
+  ).join('');
 }
 
 // ── 展演事件提示：teacher cue → /api/performance-signal（human-in-the-loop）──

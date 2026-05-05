@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>展演後 AI 協作助手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f7f6f2;
+    --surface:   #ffffff;
+    --border:    #e0ddd5;
+    --text:      #1a1814;
+    --text-sub:  #6b6760;
+    --accent:    #c8430a;
+    --accent-lt: #fef0eb;
+    --step-bg:   #1a1814;
+    --step-text: #f7f6f2;
+    --ai-bg:     #f0f7f4;
+    --ai-border: #a8d5c2;
+    --warn-bg:   #fffbeb;
+    --warn-border:#f0c419;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    background: var(--step-bg);
+    color: var(--step-text);
+    padding: 28px 32px 24px;
+    border-bottom: 3px solid var(--accent);
+  }
+  .page-header-inner { max-width: 860px; margin: 0 auto; }
+  .page-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    letter-spacing: .12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .page-title { font-size: 1.65rem; font-weight: 900; letter-spacing: -.02em; margin-bottom: 6px; }
+  .page-sub { font-size: .88rem; color: #a09d97; line-height: 1.5; }
+
+  /* ── Main Layout ── */
+  .main { max-width: 860px; margin: 0 auto; padding: 32px 16px 60px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* ── Step Card ── */
+  .step-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    background: var(--step-bg);
+    color: var(--step-text);
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-title { font-weight: 700; font-size: .95rem; letter-spacing: .02em; }
+  .step-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── Form Fields ── */
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field-row .field { flex: 1; min-width: 180px; }
+  label { font-size: .8rem; font-weight: 700; color: var(--text-sub); letter-spacing: .04em; text-transform: uppercase; }
+  input[type="text"], select, textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: .9rem;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color .18s;
+    resize: vertical;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { min-height: 80px; }
+
+  /* ── Checkbox group ── */
+  .check-group { display: flex; flex-direction: column; gap: 8px; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    background: var(--bg);
+    font-size: .88rem;
+  }
+  .check-item:hover { background: var(--accent-lt); border-color: var(--accent); }
+  .check-item input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+  .check-item input[type="checkbox"]:checked + span { color: var(--accent); font-weight: 700; }
+
+  /* ── Notice ── */
+  .notice {
+    background: var(--warn-bg);
+    border: 1.5px solid var(--warn-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: .85rem;
+    color: #7a6200;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .notice-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Generated Prompt Preview ── */
+  .prompt-preview {
+    background: #f5f4f0;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: .78rem;
+    color: var(--text-sub);
+    white-space: pre-wrap;
+    min-height: 60px;
+    line-height: 1.6;
+    display: none;
+  }
+  .prompt-preview.visible { display: block; }
+
+  /* ── AI Reply ── */
+  .ai-reply-box {
+    background: var(--ai-bg);
+    border: 2px solid var(--ai-border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    min-height: 80px;
+    font-size: .92rem;
+    line-height: 1.85;
+    white-space: pre-wrap;
+    color: var(--text);
+    position: relative;
+  }
+  .ai-reply-box.empty { color: var(--text-sub); font-style: italic; font-size: .85rem; }
+  .ai-reply-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #3a8a68;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    letter-spacing: .02em;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { opacity: .88; }
+  .btn-secondary { background: var(--step-bg); color: var(--step-text); }
+  .btn-secondary:hover:not(:disabled) { opacity: .82; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+  .btn-ghost:hover:not(:disabled) { background: var(--border); }
+  .btn-green { background: #2d7a56; color: #fff; }
+  .btn-green:hover:not(:disabled) { opacity: .88; }
+
+  /* ── Loading spinner ── */
+  .spinner { display: none; width: 18px; height: 18px; border: 2px solid #fff4; border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Copy success toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--step-bg); color: #fff;
+    padding: 10px 24px; border-radius: 8px;
+    font-size: .85rem; font-weight: 700;
+    opacity: 0; transition: transform .3s, opacity .3s;
+    pointer-events: none; z-index: 999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ── Footer ── */
+  .page-footer {
+    text-align: center;
+    font-size: .75rem;
+    color: var(--text-sub);
+    padding: 0 16px 32px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 600px) {
+    .page-header { padding: 20px 16px; }
+    .page-title { font-size: 1.3rem; }
+    .step-body { padding: 14px; }
+    .btn { padding: 9px 16px; font-size: .83rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="page-header">
+  <div class="page-header-inner">
+    <div class="page-tag">DLT 數位劇場學習 · 展演後協作工具</div>
+    <h1 class="page-title">展演後 AI 協作助手</h1>
+    <p class="page-sub">請根據展演重點卡與影片片段，詢問 AI 字幕與重點提示建議<br>AI 只提供觀眾角度的建議，最終判斷由你們自己做</p>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ── Notice ── -->
+  <div class="notice">
+    <span class="notice-icon">📋</span>
+    <span>AI 只提供觀眾角度的建議，<strong>不代表標準答案</strong>。請將 AI 回覆填入「展演後 AI 協作與回看紀錄單」，並說明採納或不採納的理由。</span>
+  </div>
+
+  <!-- ── Step 1：填寫展演資訊 ── -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">填寫展演資訊</div>
+    </div>
+    <div class="step-body">
+
+      <div class="field-row">
+        <div class="field">
+          <label for="inputGroup">組別</label>
+          <input type="text" id="inputGroup" placeholder="例：第 1 組" maxlength="20">
+        </div>
+        <div class="field">
+          <label for="inputScene">幕次</label>
+          <select id="inputScene">
+            <option value="">請選擇幕次</option>
+            <option value="第一幕 YouTuber 開場">第一幕 YouTuber 開場</option>
+            <option value="第二幕 接待客人">第二幕 接待客人</option>
+            <option value="第三幕 介紹與點餐">第三幕 介紹與點餐</option>
+            <option value="第四幕 上菜">第四幕 上菜</option>
+            <option value="第五幕 突發事件處理">第五幕 突發事件處理</option>
+            <option value="第六幕 結帳送客">第六幕 結帳送客</option>
+            <option value="第七幕 走向未來">第七幕 走向未來</option>
+            <option value="第八幕 謝幕">第八幕 謝幕</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="inputFocus">本段原本想讓觀眾看懂的重點</label>
+        <textarea id="inputFocus" placeholder="請貼上展演重點卡中的內容，例如：上菜時要從客人右側提供餐點，並提醒客人注意料理很燙"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="inputDesc">影片片段內容描述</label>
+        <textarea id="inputDesc" placeholder="請用一句話描述影片中發生什麼，例如：送餐服務生端餐點到客人右側並說出上菜台詞「どうぞ」"></textarea>
+      </div>
+
+      <div class="field">
+        <label>想請 AI 協助的地方（可複選）</label>
+        <div class="check-group">
+          <label class="check-item">
+            <input type="checkbox" value="建議哪裡適合加字幕">
+            <span>建議哪裡適合加字幕</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" value="建議哪裡適合加重點提示">
+            <span>建議哪裡適合加重點提示</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" value="找出觀眾可能看不懂的地方">
+            <span>找出觀眾可能看不懂的地方</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" value="幫我們想一個回看後可以改進的地方">
+            <span>幫我們想一個回看後可以改進的地方</span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Step 2：產生詢問內容 ── -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">產生詢問內容</div>
+    </div>
+    <div class="step-body">
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="generatePrompt()">📝 產生詢問內容</button>
+        <button class="btn btn-ghost" onclick="clearAll()">🗑 清空表單</button>
+      </div>
+      <div id="promptPreview" class="prompt-preview"></div>
+    </div>
+  </div>
+
+  <!-- ── Step 3：詢問 AI ── -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">詢問 AI 並複製回覆</div>
+    </div>
+    <div class="step-body">
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnAsk" onclick="askAI()" disabled>
+          <span id="btnAskLabel">🤖 詢問 AI</span>
+          <span class="spinner" id="btnSpinner"></span>
+        </button>
+        <button class="btn btn-green" id="btnCopy" onclick="copyReply()" disabled>📋 複製 AI 回覆</button>
+      </div>
+
+      <div>
+        <div class="ai-reply-label">AI 回覆</div>
+        <div class="ai-reply-box empty" id="aiReplyBox">請先完成步驟 1 和步驟 2，再點擊「詢問 AI」</div>
+      </div>
+
+      <div class="notice" style="margin-top: 4px;">
+        <span class="notice-icon">💡</span>
+        <span>請將 AI 回覆填入「展演後 AI 協作與回看紀錄單」，並說明你們採納或不採納的理由。</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+
+<div class="page-footer">
+  DLT 數位劇場學習平台 · 2026 健行餐旅應用日語服務展演 · AI 協作工具
+</div>
+
+<div class="toast" id="toast">✅ 已複製到剪貼簿</div>
+
+<script>
+const BACKEND_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : window.location.origin;
+const LS_KEY = 'dlt_collab_reply';
+
+let generatedPrompt = '';
+
+// ── 頁面載入時還原上次 AI 回覆 ──
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved) {
+    setReply(saved);
+  }
+});
+
+// ── Step 2：產生詢問內容 ──
+function generatePrompt() {
+  const group  = document.getElementById('inputGroup').value.trim();
+  const scene  = document.getElementById('inputScene').value.trim();
+  const focus  = document.getElementById('inputFocus').value.trim();
+  const desc   = document.getElementById('inputDesc').value.trim();
+  const checks = [...document.querySelectorAll('.check-group input[type="checkbox"]:checked')]
+                   .map(c => c.value);
+
+  if (!scene) { alert('請選擇幕次'); return; }
+  if (!focus) { alert('請填寫「本段想讓觀眾看懂的重點」'); return; }
+  if (!desc)  { alert('請填寫「影片片段內容描述」'); return; }
+  if (checks.length === 0) { alert('請至少選擇一項「想請 AI 協助的地方」'); return; }
+
+  generatedPrompt = `我們正在製作一段 YouTuber 式學習影片。
+
+組別：${group || '（未填寫）'}
+
+幕次：${scene}
+
+本段想讓觀眾看懂的專業重點是：
+${focus}
+
+影片片段內容是：
+${desc}
+
+我們想請你協助：
+${checks.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+請你以「觀眾」的角度提供建議，協助我們思考這段影片哪裡適合加字幕或重點提示，或哪裡可能讓觀眾看不懂。
+
+重要規則：
+1. 你不是老師，也不是評分者。
+2. 請不要直接幫我們完成作業。
+3. 請不要說這段表現是對或錯。
+4. 請只提供建議，讓我們自己判斷是否採納。
+5. 請用繁體中文回答。
+6. 請控制在 120 字以內。
+7. 回答格式固定為：
+   - 建議加字幕或重點提示的位置：
+   - 觀眾可能忽略的地方：
+   - 請你們自己判斷的問題：`;
+
+  const preview = document.getElementById('promptPreview');
+  preview.textContent = generatedPrompt;
+  preview.classList.add('visible');
+
+  document.getElementById('btnAsk').disabled = false;
+}
+
+// ── Step 3：詢問 AI ──
+async function askAI() {
+  if (!generatedPrompt) { alert('請先點「產生詢問內容」'); return; }
+
+  const btnAsk    = document.getElementById('btnAsk');
+  const btnLabel  = document.getElementById('btnAskLabel');
+  const spinner   = document.getElementById('btnSpinner');
+  const replyBox  = document.getElementById('aiReplyBox');
+
+  btnAsk.disabled = true;
+  btnLabel.textContent = '詢問中…';
+  spinner.style.display = 'inline-block';
+  replyBox.classList.add('empty');
+  replyBox.textContent = 'AI 思考中，請稍候…';
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/ai-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt:       generatedPrompt,
+        max_tokens:   220,
+        sessionId:    'ai-collab-' + Date.now(),
+        systemPrompt: '你是展演後 AI 協作助手，角色是觀眾代理，不是老師或評分者。你只能從觀眾是否看得懂的角度提供字幕、重點提示與回看建議。請用繁體中文回答，格式固定為三段：「建議加字幕或重點提示的位置：」「觀眾可能忽略的地方：」「請你們自己判斷的問題：」',
+      }),
+    });
+
+    const data = await res.json();
+    const reply = data.reply || data.message || '（AI 沒有回覆，請稍後再試）';
+    setReply(reply);
+    localStorage.setItem(LS_KEY, reply);
+    document.getElementById('btnCopy').disabled = false;
+
+  } catch (e) {
+    replyBox.textContent = '連線失敗，請確認 server 正在執行，再重試一次。';
+    replyBox.classList.add('empty');
+  } finally {
+    btnAsk.disabled = false;
+    btnLabel.textContent = '🤖 再問一次';
+    spinner.style.display = 'none';
+  }
+}
+
+// ── 設定 AI 回覆顯示 ──
+function setReply(text) {
+  const box = document.getElementById('aiReplyBox');
+  box.textContent = text;
+  box.classList.remove('empty');
+  document.getElementById('btnCopy').disabled = false;
+}
+
+// ── 複製 AI 回覆 ──
+async function copyReply() {
+  const text = document.getElementById('aiReplyBox').textContent;
+  if (!text || document.getElementById('aiReplyBox').classList.contains('empty')) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast();
+  } catch {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+  }
+}
+
+// ── Toast 通知 ──
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── 清空表單 ──
+function clearAll() {
+  if (!confirm('確定要清空所有填寫內容嗎？')) return;
+  document.getElementById('inputGroup').value = '';
+  document.getElementById('inputScene').value = '';
+  document.getElementById('inputFocus').value = '';
+  document.getElementById('inputDesc').value = '';
+  document.querySelectorAll('.check-group input[type="checkbox"]').forEach(c => c.checked = false);
+  document.getElementById('promptPreview').textContent = '';
+  document.getElementById('promptPreview').classList.remove('visible');
+  document.getElementById('aiReplyBox').textContent = '請先完成步驟 1 和步驟 2，再點擊「詢問 AI」';
+  document.getElementById('aiReplyBox').classList.add('empty');
+  document.getElementById('btnAsk').disabled = true;
+  document.getElementById('btnCopy').disabled = true;
+  generatedPrompt = '';
+  localStorage.removeItem(LS_KEY);
+}
+</script>
+</body>
+</html>

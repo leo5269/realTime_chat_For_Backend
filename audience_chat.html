@@ -25,8 +25,7 @@ header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; margin-left: auto; transition: background .3s; }
 .dot.on { background: #00c853; box-shadow: 0 0 5px #00c85388; }
 .status-bar { display: none; padding: 5px 14px; background: #0f0f0f; align-items: center; gap: 10px; flex-shrink: 0; }
-/* ===== 合併資訊列（展演狀態 | 表演者 | 幕次 同一列） ===== */
-.info-bar { display: none; flex-direction: row; align-items: center; gap: 6px; padding: 5px 14px; background: #12122a; border-bottom: 1px solid #2d2d4e; flex-shrink: 0; flex-wrap: wrap; }
+.info-bar { display: flex; flex-direction: row; align-items: center; gap: 6px; padding: 5px 14px; background: #12122a; border-bottom: 1px solid #2d2d4e; flex-shrink: 0; flex-wrap: wrap; }
 .info-bar.visible { display: flex; }
 .info-sep { color: #3d3d6e; font-size: .85rem; flex-shrink: 0; }
 .show-state-bar, .performer-bar, .scene-bar { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
@@ -54,8 +53,13 @@ header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var
 .setup-sub { font-size: .85rem; color: var(--muted); text-align: center; line-height: 1.5; }
 .ni { width: 100%; max-width: 320px; padding: 12px 16px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 4px; color: var(--text); font-size: 1rem; font-family: inherit; outline: none; transition: border-color .2s; }
 .ni:focus { border-color: var(--yt-red); }
+.ni.error { border-color: #dc2626; }
+#pwRow { display: none; width: 100%; max-width: 320px; flex-direction: column; gap: 6px; }
+#pwRow.visible { display: flex; }
+.enter-error { font-size: .83rem; color: #dc2626; text-align: center; min-height: 1.2em; }
 .btn-enter { width: 100%; max-width: 320px; padding: 12px; background: var(--yt-red); color: #fff; border: none; border-radius: 4px; font-size: .95rem; font-family: inherit; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: .05em; }
 .btn-enter:hover { background: var(--yt-red-dark); }
+.btn-enter:disabled { opacity: .5; cursor: not-allowed; }
 #chat { flex: 1; display: none; flex-direction: column; overflow: hidden; }
 .chat-header-strip { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .chat-label { font-size: .8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
@@ -80,33 +84,22 @@ header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var
 .btn-event { background: #fff; color: #0369a1; border: 1.5px solid #7dd3fc !important; font-size: .78rem; padding: 5px 10px; }
 .btn-event:hover { background: #f0f9ff; }
 .timer-status { font-size: .78rem; color: var(--ai-color); }
-
-/* ===== 老師快捷點評浮動工具列 ===== */
 #teacherBar {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 100;
-  flex-direction: column;
-  background: #fff;
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  flex-direction: column; background: #fff;
   border-top: 2px solid var(--teacher-border);
   box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
 }
 #teacherBar.admin-visible { display: flex; }
-
 .teacher-toggle {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 14px; background: var(--teacher-bg);
   cursor: pointer; user-select: none;
   border-bottom: 1px solid var(--teacher-border);
 }
-.teacher-toggle-label {
-  font-size: .8rem; font-weight: 700; color: var(--teacher-color);
-  display: flex; align-items: center; gap: 6px;
-}
+.teacher-toggle-label { font-size: .8rem; font-weight: 700; color: var(--teacher-color); display: flex; align-items: center; gap: 6px; }
 .teacher-toggle-arrow { font-size: .75rem; color: var(--teacher-color); transition: transform .25s; }
 .teacher-toggle-arrow.open { transform: rotate(180deg); }
-
 .teacher-btns {
   display: flex; gap: 8px; padding: 10px 14px;
   overflow-x: auto; flex-wrap: wrap;
@@ -114,22 +107,14 @@ header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var
   transition: max-height .3s ease, padding .3s ease;
   padding-top: 0; padding-bottom: 0;
 }
-.teacher-btns.open {
-  max-height: 300px;
-  padding-top: 10px; padding-bottom: 10px;
-}
+.teacher-btns.open { max-height: 300px; padding-top: 10px; padding-bottom: 10px; }
 .teacher-btns::-webkit-scrollbar { display: none; }
-
 .tbtn {
-  padding: 9px 16px;
-  border: 1.5px solid var(--teacher-border);
-  border-radius: 99px;
-  background: var(--teacher-bg);
-  color: var(--teacher-color);
+  padding: 9px 16px; border: 1.5px solid var(--teacher-border); border-radius: 99px;
+  background: var(--teacher-bg); color: var(--teacher-color);
   font-size: .88rem; font-family: inherit; font-weight: 700;
   cursor: pointer; white-space: nowrap;
-  transition: background .15s, transform .1s, border-color .15s;
-  flex-shrink: 0;
+  transition: background .15s, transform .1s, border-color .15s; flex-shrink: 0;
 }
 .tbtn:hover { background: #fef3c7; }
 .tbtn:active { transform: scale(.93); }
@@ -138,7 +123,6 @@ header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var
   100% { background: var(--teacher-bg); border-color: var(--teacher-border); color: var(--teacher-color); transform: scale(1); }
 }
 .tbtn.sent { animation: tbtn-sent .5s ease forwards; }
-
 #msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth; }
 #msgs::-webkit-scrollbar { width: 4px; }
 #msgs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -152,12 +136,7 @@ header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var
 .msg-row.admin2-msg:hover { background: #e0f2fe; }
 .msg-name.teacher { color: var(--teacher-color); }
 .msg-name.admin2 { color: #0369a1; }
-.teacher-badge {
-  font-size: .62rem; font-weight: 700;
-  background: var(--teacher-color); color: #fff;
-  padding: 1px 5px; border-radius: 3px;
-  letter-spacing: .04em; flex-shrink: 0; align-self: center;
-}
+.teacher-badge { font-size: .62rem; font-weight: 700; background: var(--teacher-color); color: #fff; padding: 1px 5px; border-radius: 3px; letter-spacing: .04em; flex-shrink: 0; align-self: center; }
 @keyframes msgIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 .msg-time { font-size: .7rem; color: var(--muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .msg-name { font-size: .82rem; font-weight: 700; color: var(--yt-red); flex-shrink: 0; }
@@ -203,7 +182,6 @@ textarea.mi::placeholder { color: var(--muted); }
 .stats-emoji { font-size: 1.3rem; line-height: 1; }
 .stats-count { font-size: 1.1rem; font-weight: 700; color: var(--text); }
 .stats-label { font-size: .65rem; color: var(--muted); }
-
 .idle-overlay { display: none; position: absolute; inset: 0; background: rgba(255,255,255,.85); z-index: 10; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
 .idle-overlay.visible { display: flex; }
 .idle-overlay-icon { font-size: 2.5rem; }
@@ -211,6 +189,84 @@ textarea.mi::placeholder { color: var(--muted); }
 .ibar.ended { background: #f5f5f5; }
 textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
 .ebtn:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+
+/* ── 管理員更新確認訊息框 ── */
+.admin-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 500; align-items: center; justify-content: center; }
+.admin-modal-overlay.visible { display: flex; }
+.admin-modal { background: #fff; border-radius: 10px; padding: 24px 28px; max-width: 320px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 16px; animation: modalIn .18s ease; }
+@keyframes modalIn { from { opacity:0; transform: scale(.93); } to { opacity:1; transform: scale(1); } }
+.admin-modal-title { font-size: 1rem; font-weight: 700; color: #0369a1; }
+.admin-modal-body { font-size: .92rem; color: #1e293b; line-height: 1.7; }
+.admin-modal-body span { font-weight: 700; color: #0f172a; }
+.admin-modal-btn { align-self: flex-end; padding: 8px 24px; background: #0369a1; color: #fff; border: none; border-radius: 6px; font-size: .92rem; font-family: inherit; font-weight: 700; cursor: pointer; transition: background .15s; }
+.admin-modal-btn:hover { background: #0284c7; }
+
+/* ── 展演事件提示按鈕（朱大帥哥0719 human-in-the-loop teacher cue）── */
+.stage-event-bar { display: none; padding: 6px 14px 8px; background: #fefce8; border-bottom: 1px solid #fde047; flex-shrink: 0; }
+.stage-event-bar.visible { display: block; }
+.stage-event-title { font-size: .72rem; font-weight: 700; color: #854d0e; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.stage-event-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-stage { padding: 5px 12px; border: 1.5px solid #d97706; border-radius: 99px; background: #fff; color: #92400e; font-size: .78rem; font-family: inherit; font-weight: 700; cursor: pointer; transition: background .15s, transform .1s; white-space: nowrap; }
+.btn-stage:hover { background: #fef3c7; }
+.btn-stage:active { transform: scale(.93); background: #fde68a; }
+
+/* ── Agent Decision Log 面板（僅管理員2）── */
+#logPanel { position: fixed; top: 0; right: 0; height: 100vh; width: 380px; background: #0f172a; color: #e2e8f0; display: none; flex-direction: column; z-index: 300; box-shadow: -4px 0 24px rgba(0,0,0,.4); font-family: 'Consolas', 'Menlo', monospace; font-size: .78rem; }
+#logPanel.open { display: flex; }
+#logPanelToggle { position: fixed; top: 50%; right: 0; transform: translateY(-50%); background: #1e293b; color: #94a3b8; border: none; border-radius: 6px 0 0 6px; padding: 10px 6px; cursor: pointer; font-size: .75rem; writing-mode: vertical-rl; letter-spacing: .1em; z-index: 301; display: none; box-shadow: -2px 0 8px rgba(0,0,0,.3); }
+#logPanelToggle:hover { background: #334155; color: #e2e8f0; }
+.log-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #1e293b; border-bottom: 1px solid #334155; flex-shrink: 0; }
+.log-header-title { font-weight: 700; color: #38bdf8; font-size: .85rem; flex: 1; font-family: inherit; }
+.log-close-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+.log-close-btn:hover { background: #334155; color: #e2e8f0; }
+.log-toolbar { display: flex; gap: 6px; padding: 8px 10px; background: #1e293b; border-bottom: 1px solid #334155; flex-shrink: 0; flex-wrap: wrap; }
+.log-filter-input { flex: 1; min-width: 80px; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #e2e8f0; padding: 4px 8px; font-size: .75rem; font-family: inherit; outline: none; }
+.log-filter-input:focus { border-color: #38bdf8; }
+.log-filter-btn { background: #334155; border: none; color: #94a3b8; border-radius: 4px; padding: 4px 8px; font-size: .72rem; font-family: inherit; cursor: pointer; white-space: nowrap; }
+.log-filter-btn.active { background: #0369a1; color: #fff; }
+.log-filter-btn:hover { background: #475569; }
+.log-entries { flex: 1; overflow-y: auto; padding: 6px 0; }
+.log-entry { padding: 6px 12px; border-bottom: 1px solid #1e293b; line-height: 1.5; }
+.log-entry:hover { background: #1e293b; }
+.log-entry.speak  { border-left: 3px solid #22c55e; }
+.log-entry.silent { border-left: 3px solid #334155; }
+.log-ts { color: #64748b; font-size: .7rem; }
+.log-badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: .68rem; font-weight: 700; margin: 0 2px; }
+.log-badge.speak   { background: #166534; color: #86efac; }
+.log-badge.silent  { background: #1e293b; color: #64748b; }
+.log-badge.teacher { background: #7c2d12; color: #fdba74; }
+.log-badge.perf    { background: #1e3a5f; color: #7dd3fc; }
+.log-badge.dt-warmup    { background: #14532d; color: #bbf7d0; }
+.log-badge.dt-perf_fb   { background: #1e3a5f; color: #7dd3fc; }
+.log-badge.dt-teacher   { background: #7c2d12; color: #fdba74; }
+.log-badge.dt-cooldown  { background: #312e81; color: #c4b5fd; }
+.log-badge.dt-busy      { background: #422006; color: #fed7aa; }
+.log-badge.dt-no_need   { background: #1e293b; color: #475569; }
+.log-badge.dt-error     { background: #7f1d1d; color: #fca5a5; }
+.log-badge.dt-unknown   { background: #1e293b; color: #64748b; }
+.log-reason { color: #94a3b8; margin-top: 2px; }
+.log-msg    { color: #fbbf24; margin-top: 2px; word-break: break-all; }
+.log-meta   { color: #475569; font-size: .68rem; margin-top: 2px; }
+.log-status { padding: 6px 12px; color: #475569; font-size: .72rem; flex-shrink: 0; border-top: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+.log-auto-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: logpulse 1.5s infinite; margin-right: 4px; vertical-align: middle; }
+@keyframes logpulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+/* ── 訂閱區塊 ── */
+.sub-bar { display: none; align-items: center; gap: 8px; padding: 5px 14px; background: #fff8f0; border-bottom: 1px solid #fde68a; flex-shrink: 0; flex-wrap: wrap; }
+.sub-bar.visible { display: flex; }
+.sub-group-name { font-size: .78rem; font-weight: 700; color: #92400e; flex-shrink: 0; }
+.sub-fan-count { font-size: .78rem; color: #92400e; flex-shrink: 0; }
+.btn-sub { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 99px; border: none; font-size: .82rem; font-family: inherit; font-weight: 700; cursor: pointer; transition: background .15s, transform .1s; flex-shrink: 0; }
+.btn-sub:active { transform: scale(.93); }
+.btn-sub.unsub  { background: #ff0000; color: #fff; }
+.btn-sub.subed  { background: #e5e7eb; color: #374151; }
+.btn-sub-cancel { display: none; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 99px; border: 1.5px solid #dc2626; background: #fff; color: #dc2626; font-size: .78rem; font-family: inherit; font-weight: 700; cursor: pointer; transition: background .15s; flex-shrink: 0; }
+.btn-sub-cancel:hover { background: #fee2e2; }
+.btn-bell { display: none; align-items: center; gap: 3px; padding: 4px 10px; border-radius: 99px; border: 1.5px solid #d1d5db; background: #fff; color: #6b7280; font-size: .78rem; font-family: inherit; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; flex-shrink: 0; }
+.btn-bell.on { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+.btn-sub-cancel.visible, .btn-bell.visible { display: inline-flex; }
+.sub-notify { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: .9rem; font-weight: 700; z-index: 999; opacity: 0; transition: opacity .4s; pointer-events: none; text-align: center; max-width: 90vw; }
+.sub-notify.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -220,7 +276,7 @@ textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
     <rect width="28" height="20" rx="4" fill="#FF0000"/>
     <polygon points="11,5 11,15 20,10" fill="white"/>
   </svg>
-  <span class="header-title">聊天室</span>
+  <span class="header-title">健行油土伯</span>
   <div class="dot" id="dot"></div>
 </header>
 
@@ -230,23 +286,62 @@ textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
   <span class="status-badge badge-rec" id="recBadge">REC</span>
 </div>
 
-<div class="info-bar" id="infoBar">
-  <!-- 展演狀態 -->
+<div class="info-bar visible" id="infoBar">
   <div class="show-state-bar idle" id="showStateBar">
     <div class="state-dot"></div>
     <span class="state-text" id="stateText">待機中</span>
   </div>
   <span class="info-sep">｜</span>
-  <!-- 表演者 -->
   <div class="performer-bar" id="performerBar">
     <span class="performer-label">🎭</span>
     <span class="performer-name" id="performerName">尚未指定</span>
   </div>
   <span class="info-sep">｜</span>
-  <!-- 幕次 -->
   <div class="scene-bar" id="sceneBar">
     <span class="scene-label">🎬</span>
     <span class="scene-name" id="sceneName">未設定</span>
+  </div>
+</div>
+
+<!-- 訂閱區塊 -->
+<div class="sub-bar" id="subBar">
+  <span class="sub-group-name" id="subGroupName"></span>
+  <span class="sub-fan-count" id="subFanCount"></span>
+  <button class="btn-sub unsub" id="btnSub" onclick="handleSubscribe()">🔴 訂閱</button>
+  <button class="btn-sub-cancel" id="btnSubCancel" onclick="handleUnsubscribe()">取消訂閱</button>
+  <button class="btn-bell" id="btnBell" onclick="handleBell()">🔔 小鈴鐺</button>
+</div>
+<div class="sub-notify" id="subNotify"></div>
+
+<!-- Agent Decision Log 面板（僅 isAdmin2 才顯示） -->
+<button id="logPanelToggle" onclick="toggleLogPanel()">📋 決策 Log</button>
+<div id="logPanel">
+  <div class="log-header">
+    <span class="log-header-title">📋 Agent Decision Log</span>
+    <button class="log-filter-btn" onclick="clearDecisionLog()" style="font-size:.72rem;padding:3px 8px;color:#f87171;border:1px solid #7f1d1d;">🗑 清除</button>
+    <button class="log-close-btn" onclick="toggleLogPanel()" title="收合">✕</button>
+  </div>
+  <div class="log-toolbar">
+    <input class="log-filter-input" id="logFilterInput" placeholder="關鍵字篩選…" oninput="onLogFilterInput()">
+    <button class="log-filter-btn active" id="logBtnAll"     onclick="setLogFilter('')">全部</button>
+    <button class="log-filter-btn"        id="logBtnSpeak"   onclick="setLogFilter('speak')">發話</button>
+    <button class="log-filter-btn"        id="logBtnSilent"  onclick="setLogFilter('silent')">靜默</button>
+    <button class="log-filter-btn"        id="logBtnTeacher" onclick="setLogFilter('YOKO')">老師</button>
+    <button class="log-filter-btn"        id="logBtnPerf"    onclick="setLogFilter('performance')">表演訊號</button>
+  </div>
+  <div class="log-entries" id="logEntries"></div>
+  <div class="log-status">
+    <span><span class="log-auto-dot"></span>每 5 秒自動更新</span>
+    <span id="logCount">— 筆</span>
+  </div>
+</div>
+
+<!-- 管理員更新確認訊息框 -->
+<div class="admin-modal-overlay" id="adminUpdateModal">
+  <div class="admin-modal">
+    <div class="admin-modal-title">✅ 更新完成</div>
+    <div class="admin-modal-body" id="adminUpdateModalBody"></div>
+    <button class="admin-modal-btn" onclick="closeAdminUpdateModal()">確認</button>
   </div>
 </div>
 
@@ -254,45 +349,64 @@ textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
   <div class="setup-icon">💬</div>
   <div class="setup-title">加入觀眾聊天室</div>
   <div class="setup-sub">輸入你的暱稱後<br>就可以開始留言！</div>
-  <input class="ni" id="ni" type="text" placeholder="你的暱稱（例：小明）" maxlength="12" autocomplete="off">
-  <button class="btn-enter" onclick="enter()">進入聊天室</button>
+  <input class="ni" id="ni" type="text" placeholder="你的暱稱（例：小明）" maxlength="12" autocomplete="off" oninput="onNameInput()">
+  <div id="pwRow">
+    <input class="ni" id="pw" type="password" placeholder="管理員密碼" autocomplete="off">
+  </div>
+  <div class="enter-error" id="enterError"></div>
+  <button class="btn-enter" id="enterBtn" onclick="enter()">進入聊天室</button>
 </div>
 
 <div id="chat">
   <div class="chat-header-strip">
     <span class="chat-label">即時聊天</span>
     <span class="viewer-count" id="viewerCount">觀看人數：1</span>
-    <button class="btn-leave" onclick="leave()">← 離開聊天室</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-leave" id="btnResetChat" onclick="resetChat()" style="display:none;">🗑 重置聊天室</button>
+      <button class="btn-leave" onclick="leave()">← 離開聊天室</button>
+    </div>
   </div>
 
-  <!-- yoko 老師：AI 控制台（快捷點評移到底部浮動工具列） -->
   <div id="adminPanel">
     <div class="admin-title">🤖 AI 機器人控制台</div>
     <div class="admin-row">
-      <input class="admin-input" id="sceneHint" placeholder="當前場景提示（選填，例：學生正在示範端菜）" maxlength="60">
-    </div>
-    <div class="admin-row" style="flex-wrap:wrap;">
-      <button class="btn-ai btn-trigger" onclick="triggerAI()">⚡ 立即發言</button>
-      <button class="btn-ai btn-reset" onclick="resetChat()">🗑 重置聊天室</button>
+      <input class="admin-input" id="sceneHint" placeholder="當前場景提示（選填，例：學生正在示範上菜動作）" maxlength="60">
+      <button class="btn-ai btn-trigger" onclick="triggerAI()" style="white-space:nowrap;flex-shrink:0;">⚡ 立即發言</button>
       <span class="timer-status" id="timerStatus"></span>
     </div>
   </div>
 
-  <!-- 朱大帥哥0719：展演控制台（快捷點評移到底部浮動工具列） -->
   <div id="adminPanel2">
     <div class="admin-title">🎭 展演控制台</div>
-    <div class="admin-row">
-      <input class="admin-input" id="performerInput" placeholder="目前表演者姓名（例：小明）" maxlength="20">
-      <button class="btn-ai" onclick="setPerformer()" style="white-space:nowrap">🎭 更新</button>
+    <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input class="admin-input" id="groupInput" placeholder="組別（例：第一組）" maxlength="20" oninput="saveRoles()" style="width:120px;flex:none;">
+        <input class="admin-input" id="roleDelivery" placeholder="送餐服務生" maxlength="10" oninput="saveRoles()" style="width:110px;flex:none;">
+        <input class="admin-input" id="roleOrder" placeholder="點餐服務生" maxlength="10" oninput="saveRoles()" style="width:110px;flex:none;">
+        <input class="admin-input" id="roleReception" placeholder="櫃台接待" maxlength="10" oninput="saveRoles()" style="width:110px;flex:none;">
+        <span style="font-size:.78rem;color:#0369a1;white-space:nowrap;flex-shrink:0;">本幕觀眾注意重點</span>
+        <input class="admin-input" id="audienceFocusInput" placeholder="例：上菜要從客人右側，不要跨過客人面前" maxlength="80" oninput="saveRoles()" style="width:340px;flex:none;">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input class="admin-input" id="sceneInput" placeholder="目前幕次（例：第一幕）" maxlength="20" style="width:120px;flex:none;">
+        <button class="btn-ai" onclick="setScene()" style="white-space:nowrap;">🎬 更新</button>
+        <button class="btn-ai" onclick="setShowState('idle')"  id="btnIdle" style="white-space:nowrap;">⏳ 待機中</button>
+        <button class="btn-ai" onclick="setShowState('live')"  id="btnLive" style="white-space:nowrap;">🔴 展演中</button>
+        <button class="btn-ai" onclick="setShowState('ended')" id="btnEnded" style="white-space:nowrap;">🏁 展演結束</button>
+      </div>
     </div>
-    <div class="admin-row">
-      <input class="admin-input" id="sceneInput" placeholder="目前幕次（例：迎賓、帶位、送餐）" maxlength="20">
-      <button class="btn-ai" onclick="setScene()" style="white-space:nowrap">🎬 更新</button>
-    </div>
-    <div class="admin-row">
-      <button class="btn-ai" onclick="setShowState('idle')"  id="btnIdle">⏳ 待機中</button>
-      <button class="btn-ai" onclick="setShowState('live')"  id="btnLive">🔴 展演中</button>
-      <button class="btn-ai" onclick="setShowState('ended')" id="btnEnded">🏁 展演結束</button>
+  </div>
+
+  <!-- 展演事件提示（朱大帥哥0719 才看得到，human-in-the-loop teacher cue）-->
+  <div class="stage-event-bar" id="stageEventBar">
+    <div class="stage-event-title">🎯 展演事件提示（AI 事件觸發）</div>
+    <div class="stage-event-btns">
+      <button class="btn-stage" onclick="sendStageEvent('narration_started','解說開始，請觀眾注意本幕重點')">📢 解說開始</button>
+      <button class="btn-stage" onclick="sendStageEvent('serving_started','學生正在進行上菜動作')">🍽 開始上菜</button>
+      <button class="btn-stage" onclick="sendStageEvent('key_action_done','學生完成了本幕關鍵動作')">✅ 關鍵動作完成</button>
+      <button class="btn-stage" onclick="sendStageEvent('voice_low','學生聲音偏小，觀眾可能聽不清楚')">🔇 聲音偏小</button>
+      <button class="btn-stage" onclick="sendStageEvent('position_reminder','學生需要注意站位或與客人的距離')">📍 站位提醒</button>
+      <button class="btn-stage" onclick="sendStageEvent('audience_focus','提醒觀眾注意本幕設定的專業重點')">👁 觀眾重點提醒</button>
     </div>
   </div>
 
@@ -322,7 +436,6 @@ textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
     <button class="ebtn" onclick="semoji('✨')">✨</button>
   </div>
   <div class="rate-hint" id="rateHint">⏳ 請稍後再發言</div>
-  <!-- qbar：只有一般觀眾才顯示，管理員由 showChat() 隱藏 -->
   <div class="qbar" id="qbar">
     <button class="qbtn" onclick="sendQuick('加油！💪')">加油</button>
     <button class="qbtn" onclick="sendQuick('很棒！👏')">很棒</button>
@@ -341,7 +454,7 @@ textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
   </div>
 </div>
 
-<!-- ===== 老師快捷點評浮動工具列（管理員專用，固定在畫面底部） ===== -->
+<!-- 老師快捷點評浮動工具列 -->
 <div id="teacherBar">
   <div class="teacher-toggle" onclick="toggleTeacherBar()">
     <span class="teacher-toggle-label">
@@ -351,74 +464,73 @@ textarea.mi:disabled { background: #ebebeb; color: #999; cursor: not-allowed; }
     <span class="teacher-toggle-arrow" id="teacherArrow">▲</span>
   </div>
   <div class="teacher-btns" id="teacherBtns">
-    <button class="tbtn" onclick="quickTeacher(this, '很好！繼續保持 👍')">很好 👍</button>
-    <button class="tbtn" onclick="quickTeacher(this, '注意站位 🧍')">注意站位 🧍</button>
-    <button class="tbtn" onclick="quickTeacher(this, '保持笑容 😊')">保持笑容 😊</button>
-    <button class="tbtn" onclick="quickTeacher(this, '日語再清楚一點 🗣')">日語再清楚 🗣</button>
-    <button class="tbtn" onclick="quickTeacher(this, '音量再大一點 📢')">音量再大 📢</button>
-    <button class="tbtn" onclick="quickTeacher(this, '眼神看向客人 👀')">眼神看客人 👀</button>
-    <button class="tbtn" onclick="quickTeacher(this, '動作很自然 ✨')">動作自然 ✨</button>
-    <button class="tbtn" onclick="quickTeacher(this, '鞠躬角度再深一點 🙇')">鞠躬再深 🙇</button>
-    <button class="tbtn" onclick="quickTeacher(this, '說話速度放慢 🐢')">說話放慢 🐢</button>
-    <button class="tbtn" onclick="quickTeacher(this, '非常棒！🎉')">非常棒 🎉</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '好棒~', 'speech')">好棒~ 👍</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '注意站位', 'speech')">注意站位 🧍</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '保持笑容！加油！笑起來！', 'rainbow_speech')">保持笑容 😊</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '日語再清楚一點', 'speech')">日語再清楚 🗣</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '音量再大一點', 'speech')">音量再大 📢</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '眼神看向客人', 'speech')">眼神看客人 👀</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '動作很自然，繼續保持！', 'spotlight_speech')">動作自然 ✨</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '鞠躬角度再深一點', 'speech')">鞠躬再深 🙇</button>
+    <button class="tbtn" onclick="quickTeacherWithAction(this, '說話速度放慢', 'speech')">說話放慢 🐢</button>
   </div>
 </div>
 
 <script>
 const ABLY_KEY = '4b0T5w.1DqtYQ:SY1t3uMjRY6UcSmMGKBSg938sYm1kZmMgvazhupgNq8';
-// 後端 API 網址：開發時用 localhost，部署後改成你的伺服器網址
-    const BACKEND_URL = 'https://realtimechatforbackend-production.up.railway.app';
+const BACKEND_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : window.location.origin;
+    /* 本機測功能 http://localhost:3000 */
+    /* 部署改 https://realtimechatforbackend-production.up.railway.app */
 const CH = 'dlt-chat';
 const STORAGE_KEY = 'dlt_chat_msgs';
 const MAX_STORED = 200;
-const AI_NAME = '🤖 DLT助理';
-const ADMIN_PASSWORD = 'yoko老師';
+const AI_NAME = 'DLT助理';
+const ADMIN_PASSWORD = 'YOKO';
 const ADMIN2_PASSWORD = '朱大帥哥0719';
 const TIMER_INTERVAL = 60;
+// ── 記憶：每組同學展演開始時產生新 session，AI 記憶自動重置 ──
+let SESSION_ID = 'dlt-show-' + Date.now();
 
-let me = '', ablyChannel = null, isAdmin = false, isAdmin2 = false;
+let me = '', ablyChannel = null, ablyInstance = null, isAdmin = false, isAdmin2 = false;
 const tabId = Math.random().toString(36).slice(2, 8);
 let stats = { thumb: 0, clap: 0, fire: 0, aiMsg: 0, userMsg: 0 };
 let statsActive = false;
 let isRecording = true;
 const PERFORMER_KEY = 'dlt_performer';
+const GROUP_KEY      = 'dlt_group';
+const ROLE_DELIVERY_KEY   = 'dlt_role_delivery';
+const ROLE_ORDER_KEY      = 'dlt_role_order';
+const ROLE_RECEPTION_KEY  = 'dlt_role_reception';
+const AUDIENCE_FOCUS_KEY  = 'dlt_audience_focus';
 const SCENE_KEY = 'dlt_scene';
 const SHOW_STATE_KEY = 'dlt_show_state';
 let showState = 'idle';
+const STATE_LABELS = { idle: '待機中', live: '展演中', ended: '展演結束' };
+const _renderedMids = new Set(); // 已渲染過的訊息 mid，避免重複顯示
 let lastAIMessageTime = 0;
-let idleTimer = null;
 const onlineUsers = new Set();
-const IDLE_TIMEOUT = 5 * 60 * 1000;
 let timerOn = false, timerHandle = null, timerCountdown = 0, countdownHandle = null;
-let teacherBarOpen = false; // 預設收合
+let teacherBarOpen = false;
+let subCurrentGroup = '';        // 目前 info bar 上顯示的組別
+let subMyGroups = {};            // { '第一組': { bell: false }, ... }  從 server 載入
+let bellNotifiedThisSession = false; // 這次連線是否已通知過鈴鐺
+let _subNotifyTimer = null;      // 訂閱通知泡泡的 timer
 
-// ===== 老師浮動工具列 =====
 function toggleTeacherBar() {
   teacherBarOpen = !teacherBarOpen;
   document.getElementById('teacherBtns').classList.toggle('open', teacherBarOpen);
   document.getElementById('teacherArrow').classList.toggle('open', teacherBarOpen);
-  setTimeout(adjustChatPadding, 310); // 等 transition 結束
+  setTimeout(adjustChatPadding, 310);
 }
-
-function showTeacherBar() {
-  document.getElementById('teacherBar').classList.add('admin-visible');
-  adjustChatPadding();
-}
-
-function hideTeacherBar() {
-  document.getElementById('teacherBar').classList.remove('admin-visible');
-  adjustChatPadding();
-}
-
+function showTeacherBar() { document.getElementById('teacherBar').classList.add('admin-visible'); adjustChatPadding(); }
+function hideTeacherBar() { document.getElementById('teacherBar').classList.remove('admin-visible'); adjustChatPadding(); }
 function adjustChatPadding() {
   const bar = document.getElementById('teacherBar');
   const ibar = document.getElementById('ibar');
   if (!ibar) return;
-  if (bar && bar.classList.contains('admin-visible')) {
-    ibar.style.marginBottom = bar.offsetHeight + 'px';
-  } else {
-    ibar.style.marginBottom = '0';
-  }
+  ibar.style.marginBottom = (bar && bar.classList.contains('admin-visible')) ? bar.offsetHeight + 'px' : '0';
 }
 
 function quickTeacher(btn, text) {
@@ -427,16 +539,97 @@ function quickTeacher(btn, text) {
   setTimeout(() => btn.classList.remove('sent'), 500);
 }
 
-document.getElementById('ni').addEventListener('keydown', e => { if(e.key==='Enter') enter(); });
+// ── 帶 action 的老師快捷點評 ──
+function quickTeacherWithAction(btn, text, action) {
+  if (!ablyChannel) return;
+  const ts_ = now();
+  ablyChannel.publish('msg', {
+    n: me, t: text, e: false, ts: ts_,
+    mid: 'msg-' + ts_ + '-' + Math.random().toString(36).slice(2,5),
+    isTeacher: true,
+    action: action
+  });
+  btn.classList.add('sent');
+  setTimeout(() => btn.classList.remove('sent'), 500);
+}
 
-function enter() {
+document.getElementById('ni').addEventListener('keydown', e => { if(e.key==='Enter') enter(); });
+document.getElementById('pw').addEventListener('keydown', e => { if(e.key==='Enter') enter(); });
+
+// ── 暱稱輸入時：若是管理員名稱則顯示密碼欄 ──
+const ADMIN_NAMES_SET = new Set([ADMIN_PASSWORD, ADMIN2_PASSWORD]);
+function onNameInput() {
   const n = document.getElementById('ni').value.trim();
+  const pwRow = document.getElementById('pwRow');
+  document.getElementById('enterError').textContent = '';
+  document.getElementById('ni').classList.remove('error');
+  if (ADMIN_NAMES_SET.has(n)) {
+    pwRow.classList.add('visible');
+  } else {
+    pwRow.classList.remove('visible');
+    document.getElementById('pw').value = '';
+  }
+}
+
+// ── 管理員密碼（與暱稱分開，不存在前端明碼常數中）──
+const ADMIN_PASSWORDS = {
+  [ADMIN_PASSWORD]:  'yoko2026',
+  [ADMIN2_PASSWORD]: 'dlt2026',
+};
+
+async function enter() {
+  const n = document.getElementById('ni').value.trim();
+  const enterBtn = document.getElementById('enterBtn');
+  const errorEl  = document.getElementById('enterError');
+
   if (!n) { document.getElementById('ni').focus(); return; }
+
+  // ── 管理員：驗證密碼 ──
+  if (ADMIN_NAMES_SET.has(n)) {
+    const pw = document.getElementById('pw').value;
+    if (!pw) {
+      errorEl.textContent = '請輸入管理員密碼';
+      document.getElementById('pw').focus();
+      return;
+    }
+    if (pw !== ADMIN_PASSWORDS[n]) {
+      errorEl.textContent = '密碼錯誤，請再試一次';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+      return;
+    }
+  }
+
+  // ── 打後端確認暱稱是否已被使用 ──
+  enterBtn.disabled = true;
+  errorEl.textContent = '確認中…';
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/check-name?name=${encodeURIComponent(n)}`);
+    const data = await res.json();
+    if (data.taken) {
+      errorEl.textContent = '此暱稱已有人使用，請換一個';
+      document.getElementById('ni').classList.add('error');
+      document.getElementById('ni').focus();
+      enterBtn.disabled = false;
+      return;
+    }
+  } catch (e) {
+    // 後端打不通時放行（避免斷線時完全無法進入）
+    console.warn('[check-name] 後端無回應，跳過檢查');
+  }
+
+  errorEl.textContent = '';
+  enterBtn.disabled = false;
+
   me = n;
   isAdmin  = (n === ADMIN_PASSWORD);
   isAdmin2 = (n === ADMIN2_PASSWORD);
-  localStorage.setItem('dlt_chat_name', me);
-  localStorage.setItem('dlt_in_chat', '1');
+  // ── sessionStorage 記錄這個分頁自己是誰（每分頁獨立，刷新保留，關閉消失）──
+  sessionStorage.setItem('dlt_my_name', me);
+  // localStorage 只存名字（供刷新時讀取）
+  if (isAdmin)       localStorage.setItem('dlt_admin_name',  me);
+  else if (isAdmin2) localStorage.setItem('dlt_admin2_name', me);
+  else               localStorage.setItem('dlt_chat_name',   me);
   showChat();
   initAbly();
 }
@@ -445,57 +638,74 @@ function showChat() {
   document.getElementById('setup').style.display = 'none';
   document.getElementById('chat').style.display = 'flex';
   document.getElementById('infoBar').classList.add('visible');
-  if (isAdmin)  { document.getElementById('adminPanel').style.display  = 'flex'; showTeacherBar(); }
-  if (isAdmin2) { document.getElementById('adminPanel2').style.display = 'flex'; }
-  // 管理員不需要觀眾快捷按鈕列
+  if (isAdmin)  { document.getElementById('adminPanel').style.display  = 'flex'; showTeacherBar(); document.getElementById('btnResetChat').style.display = 'flex'; }
+  if (isAdmin2) {
+    document.getElementById('adminPanel2').style.display = 'flex';
+    document.getElementById('logPanelToggle').style.display = 'block';
+    document.getElementById('stageEventBar').classList.add('visible');
+  }
   if (isAdmin || isAdmin2) document.getElementById('qbar').style.display = 'none';
+  // ── 先 restore 展演狀態 ──
+  restoreShowState();
+  // ── 進入聊天室前先清空 DOM，避免和歷史訊息重複 ──
+  document.getElementById('msgs').innerHTML = '';
+  _renderedMids.clear();
   restoreMsgs();
   updateStatusBar();
   restorePerformer();
   restoreScene();
+  restoreRoles();
   startTimer();
-  if (!isAdmin && !isAdmin2) resetIdleTimer();
   setTimeout(adjustChatPadding, 100);
 }
 
-function resetIdleTimer() {
-  clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => { alert('你已超過 5 分鐘沒有發言，已自動離開聊天室。'); leave(); }, IDLE_TIMEOUT);
-}
-
 function leave() {
-  clearTimeout(idleTimer);
-  localStorage.removeItem('dlt_in_chat');
+  // ── 離開時清掉這個分頁的身份 ──
+  sessionStorage.removeItem('dlt_my_name');
   document.getElementById('statusBar').classList.remove('visible');
-  document.getElementById('performerBar').classList.remove('visible');
-  document.getElementById('sceneBar').classList.remove('visible');
-  document.getElementById('showStateBar').classList.remove('visible');
+  // ── info bar 永遠保留，不在 leave 時隱藏 ──
   if (ablyChannel) ablyChannel.publish('presence', { type: 'leave', name: me });
   setTimeout(() => {
     document.getElementById('chat').style.display = 'none';
     document.getElementById('setup').style.display = 'flex';
     if (!isAdmin && !isAdmin2) document.getElementById('ni').value = '';
     else document.getElementById('ni').value = me;
-    document.getElementById('msgs').innerHTML = '';
+    // ── 離開時不清空訊息，讓再次進入聊天室時能看到歷史訊息 ──
     document.getElementById('dot').classList.remove('on');
     document.getElementById('adminPanel').style.display  = 'none';
     document.getElementById('adminPanel2').style.display = 'none';
+    document.getElementById('btnResetChat').style.display = 'none';
+    // ── 收合並停止 log polling ──
+    document.getElementById('logPanelToggle').style.display = 'none';
+    document.getElementById('logPanel').classList.remove('open');
+    document.getElementById('stageEventBar').classList.remove('visible');
+    logPanelOpen = false;
+    clearInterval(logPollingTimer); logPollingTimer = null;
     hideTeacherBar();
     if (ablyChannel) { ablyChannel.unsubscribe(); ablyChannel = null; }
+    if (ablyInstance) { try { ablyInstance.close(); } catch(e) {} ablyInstance = null; }
     stopTimer();
     onlineUsers.clear();
+    // ── 清除訂閱區塊 ──
+    document.getElementById('subBar').classList.remove('visible');
+    clearSubNotify();
+    subCurrentGroup = ''; subMyGroups = {}; bellNotifiedThisSession = false;
     isAdmin2 = false; me = ''; isAdmin = false;
   }, 300);
 }
 
-const savedName = localStorage.getItem('dlt_chat_name');
-if (savedName && localStorage.getItem('dlt_in_chat')) {
+// ── auto-login：用 sessionStorage 記錄這個分頁自己是誰，刷新後直接恢復 ──
+// sessionStorage 每個分頁獨立，不同分頁不會互相干擾
+// ── 重整時跳過 check-name（自己重整不應該被自己擋）──
+(function () {
+  const savedName = sessionStorage.getItem('dlt_my_name');
+  if (!savedName) return;
   me = savedName;
   isAdmin  = (savedName === ADMIN_PASSWORD);
   isAdmin2 = (savedName === ADMIN2_PASSWORD);
   showChat();
   initAbly();
-}
+})();
 
 function saveMsg(d) {
   let arr = [];
@@ -512,18 +722,33 @@ function restoreMsgs() {
 }
 
 function initAbly() {
+  // ── 先關閉舊連線，避免重整後新舊連線衝突 ──
+  if (ablyInstance) {
+    try { ablyInstance.close(); } catch(e) {}
+    ablyInstance = null;
+    ablyChannel = null;
+  }
   const ab = new Ably.Realtime({ key: ABLY_KEY });
-  ab.connection.on('disconnected', () => { document.getElementById('dot').classList.remove('on'); sys('連線中斷，重新連線中…'); });
+  ablyInstance = ab;
   ablyChannel = ab.channels.get(CH);
-  ab.connection.on('connected', () => {
+
+  function onConnected() {
     document.getElementById('dot').classList.add('on');
     sys('已連線 ✓');
-    restoreShowState();
     onlineUsers.add(me);
     updateViewerCount();
     ablyChannel.publish('presence', { type: 'join', name: me, lastAITime: lastAIMessageTime });
     setTimeout(() => { ablyChannel.publish('presence', { type: 'hello', name: me, tabId }); }, 500);
-  });
+    if (isAdmin2) setTimeout(() => syncAgentContext(), 1000);
+    loadMySubscriptions().then(() => checkBellNotify());
+  }
+
+  ab.connection.on('connected', onConnected);
+  ab.connection.on('disconnected', () => { document.getElementById('dot').classList.remove('on'); sys('連線中斷，重新連線中…'); });
+  ab.connection.on('failed',       () => { document.getElementById('dot').classList.remove('on'); sys('連線失敗，請重新整理頁面'); });
+
+  // ── 若連線已經是 connected 狀態（極少數情況），直接觸發 ──
+  if (ab.connection.state === 'connected') onConnected();
   ablyChannel.subscribe('presence', m => {
     const d = m.data;
     if (d.type === 'join') {
@@ -532,26 +757,37 @@ function initAbly() {
       if (d.lastAITime && d.lastAITime > lastAIMessageTime) { lastAIMessageTime = d.lastAITime; timerCountdown = TIMER_INTERVAL; }
     } else if (d.type === 'hello' && d.name !== me) {
       ablyChannel.publish('presence', { type: 'here', name: me, targetTabId: d.tabId,
-        performer: localStorage.getItem(PERFORMER_KEY) || '',
+        performer: localStorage.getItem(GROUP_KEY) || localStorage.getItem(PERFORMER_KEY) || '',
         scene: localStorage.getItem(SCENE_KEY) || '',
-        showState: showState });
+        showState: localStorage.getItem(SHOW_STATE_KEY) || showState });
     } else if (d.type === 'here') {
-      if (d.targetTabId && d.targetTabId !== tabId) return;
       onlineUsers.add(d.name);
-      if (d.performer) applyPerformer(d.performer);
-      if (d.scene !== undefined) applyScene(d.scene);
-      if (d.showState) applyShowState(d.showState);
+      if (d.targetTabId && d.targetTabId !== tabId) { updateViewerCount(); return; }
+      // ── Bug1 修正：performer/scene/showState 只在自己還沒登入時接受同步 ──
+      // 重整後 me 已經從 localStorage 恢復，不應被別人的 here 覆蓋
+      if (!me) {
+        if (d.performer) applyPerformer(d.performer);
+        if (d.scene !== undefined) applyScene(d.scene);
+        if (d.showState) applyShowState(d.showState);
+      } else {
+        // 已登入：只同步 showState 和 scene（全場共用），但不覆蓋自己本地已有的值
+        if (d.showState) applyShowState(d.showState, true);
+        // scene 只在對方有值時才同步，避免空值覆蓋本地已有的幕次
+        if (d.scene !== undefined && d.scene !== '') applyScene(d.scene);
+      }
     } else if (d.type === 'leave') {
       onlineUsers.delete(d.name);
       if (d.name !== me) sys(`👋 ${d.name} 離開了聊天室`);
     }
     updateViewerCount();
     if (isAdmin) updateAdminTimer();
+    syncAudienceCount();  // presence 事件只更新人數，不動 showState
   });
   ablyChannel.subscribe('reset', () => { clearChatUI(); });
   ablyChannel.subscribe('performer', m => { applyPerformer(m.data.name); });
   ablyChannel.subscribe('scene', m => { applyScene(m.data.name); });
   ablyChannel.subscribe('showstate', m => { applyShowState(m.data.state); });
+  ablyChannel.subscribe('fancount', m => { if (m.data) onFanCountUpdate(m.data.group, m.data.count); });
   ablyChannel.subscribe('msg', m => {
     const d = m.data;
     saveMsg(d);
@@ -564,9 +800,7 @@ function initAbly() {
         else { stats.userMsg++; }
       }
     }
-    if (d.n !== AI_NAME && d.n !== ADMIN_PASSWORD && d.n !== ADMIN2_PASSWORD && !d.e) {
-      checkKeywordAndReply(d.n, d.t, incomingId, d.ts);
-    }
+    // ── 關鍵字回覆已移到後端處理，前端不再呼叫 checkKeywordAndReply ──
   });
 }
 
@@ -590,43 +824,41 @@ async function triggerAI() {
   btn.disabled = false; btn.textContent = '⚡ 立即發言';
 }
 
-const KEYWORDS = ['DLT', 'dlt', '小幫手', 'DLT助手', 'dlt助手'];
-let isReplying = false, isAIPosting = false;
-
-function checkKeywordAndReply(senderName, text, triggerMsgId, triggerTs) {
-  if (!KEYWORDS.some(kw => text.includes(kw)) || isReplying) return;
-  isReplying = true;
-  replyToMessage(senderName, text, triggerMsgId, triggerTs).finally(() => { setTimeout(() => { isReplying = false; }, 1500); });
-}
-
-async function replyToMessage(senderName, userText, triggerMsgId, triggerTs) {
-  try {
-    const hint = document.getElementById('sceneHint') ? document.getElementById('sceneHint').value.trim() : '';
-    const prompt = `你是一個活潑熱情的數位劇場AI助理「DLT助理」，正在觀看學生展演。${hint ? '目前場景：' + hint + '。' : ''}
-觀眾「${senderName}」在聊天室對你說：「${userText}」
-請用繁體中文，友善自然地回覆他，30字以內，可加表情符號。只輸出回覆內容，不要加稱謂或說明。`;
-    const res = await fetch(`${BACKEND_URL}/api/ai-chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, max_tokens: 80 })
-    });
-    if (!res.ok) throw new Error(`後端錯誤 ${res.status}`);
-    const { reply } = await res.json();
-    if (reply && ablyChannel) {
-      const aiTs = now();
-      ablyChannel.publish('msg', { n: AI_NAME, t: `@${senderName} ${reply}`, e: false, ts: aiTs,
-        mid: 'msg-ai-' + aiTs + '-' + Math.random().toString(36).slice(2,5), triggerId: triggerMsgId });
-    }
-  } catch(err) { console.error('關鍵字回覆失敗:', err); }
-}
+// ── 關鍵字回覆已移到後端 server.js 處理 ──
+let isAIPosting = false;
 
 async function callOpenAI(hint) {
-  const prompt = `你是一個活潑熱情的數位劇場AI助理，正在觀看學生的展演表演。${hint ? '目前場景：' + hint + '。' : ''}
-請用繁體中文，以觀眾的角度，發一則簡短熱情的鼓勵留言（20字以內），可以加表情符號，語氣要自然像真實觀眾，稱呼表演者為「同學」。只輸出留言內容，不要加任何說明。`;
+  const prompt = `目前場景：${hint || '學生展演中'}。
+請以觀眾角度發一則簡短熱情的鼓勵留言（20字以內），不要加任何表情符號，稱呼表演者為「同學」。只輸出留言內容。`;
+  const group      = localStorage.getItem(GROUP_KEY) || '';
+  const delivery   = localStorage.getItem(ROLE_DELIVERY_KEY) || '';
+  const order      = localStorage.getItem(ROLE_ORDER_KEY) || '';
+  const reception  = localStorage.getItem(ROLE_RECEPTION_KEY) || '';
+  const currentScene = localStorage.getItem(SCENE_KEY) || '';
+  const sceneRoleMap = {
+    '第一幕': group    ? `本幕重點：介紹${group}整組` : '',
+    '第二幕': reception ? `本幕重點：觀察櫃台接待${reception}的表現` : '',
+    '第三幕': order     ? `本幕重點：觀察點餐服務生${order}的表現` : '',
+    '第四幕': delivery  ? `本幕重點：觀察送餐服務生${delivery}的表現` : '',
+    '第五幕': delivery  ? `本幕重點：觀察送餐服務生${delivery}的表現` : '',
+    '第六幕': reception ? `本幕重點：觀察櫃台接待${reception}的表現` : '',
+    '第七幕': group    ? `本幕重點：介紹${group}整組` : '',
+    '第八幕': group    ? `本幕重點：介紹${group}整組` : '',
+  };
+  const sceneRole = sceneRoleMap[currentScene] || '';
+  const roleDesc = [
+    group      ? `組別：${group}` : '',
+    delivery   ? `送餐服務生：${delivery}` : '',
+    order      ? `點餐服務生：${order}` : '',
+    reception  ? `櫃台接待：${reception}` : '',
+  ].filter(Boolean).join('，');
+  const systemPrompt = `你是活潑熱情的數位劇場AI助理「DLT助理」，全程觀看學生展演。
+你記得剛才說過的話，不會重複一樣的鼓勵。用繁體中文回覆，語氣自然像真實觀眾。
+${roleDesc ? '本場展演資訊：' + roleDesc + '。' : ''}${sceneRole ? sceneRole + '，請只稱呼該幕的關鍵表演者名字。' : ''}`;
   const res = await fetch(`${BACKEND_URL}/api/ai-chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, max_tokens: 60 })
+    body: JSON.stringify({ prompt, max_tokens: 60, sessionId: SESSION_ID, systemPrompt })
   });
   if (!res.ok) throw new Error(`後端 API 錯誤 ${res.status}`);
   const { reply } = await res.json();
@@ -634,32 +866,58 @@ async function callOpenAI(hint) {
 }
 
 function updateAdminTimer() {
-  if (!isAdmin) return;
-  const hasAudience = [...onlineUsers].some(n => n !== ADMIN_PASSWORD && n !== ADMIN2_PASSWORD);
-  if (!hasAudience && timerOn) stopTimer();
-  else if (hasAudience && !timerOn) startTimer();
+  // Agent loop 現在由後端 server.js 控制，前端只需同步 context
+  syncAgentContext();
 }
-function startTimer() {
-  if (timerOn) return;
-  timerOn = true; timerCountdown = TIMER_INTERVAL; updateCountdown();
-  countdownHandle = setInterval(() => { timerCountdown--; updateCountdown(); if (timerCountdown <= 0) { timerCountdown = TIMER_INTERVAL; triggerAISilent(); } }, 1000);
+function startTimer() { syncAgentContext(); }
+function stopTimer() { const el = document.getElementById('timerStatus'); if (el) el.textContent = ''; }
+function updateCountdown() {}
+
+// ── 同步展演 context 給後端 agent decision engine ──
+// ── 只更新後端的 audienceCount，不影響 loop 啟停 ──
+function syncAudienceCount() {
+  const audienceCount = [...onlineUsers].filter(n => n !== ADMIN_PASSWORD && n !== ADMIN2_PASSWORD).length;
+  fetch(`${BACKEND_URL}/api/agent-context`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: SESSION_ID, audienceCount })
+  }).catch(() => {});
 }
-function stopTimer() { timerOn = false; clearInterval(countdownHandle); const el = document.getElementById('timerStatus'); if (el) el.textContent = ''; }
-function updateCountdown() { const el = document.getElementById('timerStatus'); if (el) el.textContent = timerOn ? `下次發言：${timerCountdown}s` : ''; }
-async function triggerAISilent() {
-  if (showState !== 'live') { timerCountdown = TIMER_INTERVAL; return; }
-  const audienceOnly = [...onlineUsers].filter(n => n !== ADMIN_PASSWORD && n !== ADMIN2_PASSWORD);
-  if (audienceOnly.length === 0) { timerCountdown = TIMER_INTERVAL; return; }
-  const yokoOnline = onlineUsers.has(ADMIN_PASSWORD);
-  if (yokoOnline && !isAdmin) return;
-  if (!yokoOnline && !isAdmin) { const students = audienceOnly.sort(); if (students[0] !== me) return; }
-  if (isAIPosting) return;
-  isAIPosting = true;
-  try {
-    const hint = document.getElementById('sceneHint') ? document.getElementById('sceneHint').value.trim() : '';
-    const msg = await callOpenAI(hint);
-    if (msg && ablyChannel) ablyChannel.publish('msg', { n: AI_NAME, t: msg, e: false, ts: now() });
-  } catch(e) { /* 靜默失敗 */ } finally { isAIPosting = false; }
+
+function syncAgentContext() {
+  // ── 只有 isAdmin2（朱大帥哥0719）才能控制 showState，避免觀眾頁面送錯誤的 idle ──
+  if (!isAdmin2) {
+    syncAudienceCount();
+    return;
+  }
+  const sceneRoleMapForSync = {
+    '第一幕': localStorage.getItem(GROUP_KEY) || '',
+    '第二幕': localStorage.getItem(ROLE_RECEPTION_KEY) || '',
+    '第三幕': localStorage.getItem(ROLE_ORDER_KEY) || '',
+    '第四幕': localStorage.getItem(ROLE_DELIVERY_KEY) || '',
+    '第五幕': localStorage.getItem(ROLE_DELIVERY_KEY) || '',
+    '第六幕': localStorage.getItem(ROLE_RECEPTION_KEY) || '',
+    '第七幕': localStorage.getItem(GROUP_KEY) || '',
+    '第八幕': localStorage.getItem(GROUP_KEY) || '',
+  };
+  const currentScene = localStorage.getItem(SCENE_KEY) || '';
+  const audienceCount = [...onlineUsers].filter(n => n !== ADMIN_PASSWORD && n !== ADMIN2_PASSWORD).length;
+  fetch(`${BACKEND_URL}/api/agent-context`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId:    SESSION_ID,
+      showState:    showState,
+      currentScene: currentScene,
+      group:        localStorage.getItem(GROUP_KEY) || '',
+      keyPerformer: sceneRoleMapForSync[currentScene] || '',
+      roleDelivery: localStorage.getItem(ROLE_DELIVERY_KEY) || '',
+      roleOrder:    localStorage.getItem(ROLE_ORDER_KEY) || '',
+      roleReception:localStorage.getItem(ROLE_RECEPTION_KEY) || '',
+      audienceFocus:localStorage.getItem(AUDIENCE_FOCUS_KEY) || '',
+      audienceCount: audienceCount,
+    })
+  }).catch(() => {});
 }
 
 function now() { const d = new Date(); return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0'); }
@@ -689,26 +947,28 @@ function sendQuick(text) {
   if (!ablyChannel || (!isAdmin && !isAdmin2 && (showState==='ended'||showState==='idle')) || !canSend()) return;
   const ts_ = now();
   ablyChannel.publish('msg', { n: me, t: text, e: false, ts: ts_, mid: 'msg-' + ts_ + '-' + Math.random().toString(36).slice(2,5) });
-  if (!isAdmin && !isAdmin2) resetIdleTimer();
 }
 function send() {
   const el = document.getElementById('mi'); const t = el.value.trim();
   if (!t || !ablyChannel || (!isAdmin && !isAdmin2 && (showState==='ended'||showState==='idle')) || !canSend()) return;
   const ts_ = now(); const mid = 'msg-' + ts_ + '-' + me.slice(0,4) + '-' + Math.random().toString(36).slice(2,5);
   ablyChannel.publish('msg', { n: me, t, e: false, ts: ts_, mid });
-  resetIdleTimer(); el.value = ''; el.style.height = 'auto';
+  el.value = ''; el.style.height = 'auto';
 }
 function semoji(em) {
   if (!ablyChannel || !canSend()) return;
   const ts_e = now(); const mid_e = 'msg-' + ts_e + '-' + me.slice(0,4) + '-' + Math.random().toString(36).slice(2,5);
   ablyChannel.publish('msg', { n: me, t: em, e: true, ts: ts_e, mid: mid_e });
-  resetIdleTimer();
 }
 
 function addMsg(name, text, isEmoji, ts, own, isRestore, isAI, triggerId, mid, isTeacher) {
   const msgs = document.getElementById('msgs');
-  const row = document.createElement('div');
   const msgId = mid || ('msg-fallback-' + Math.random().toString(36).slice(2,8));
+  // ── 防止同一則訊息重複渲染（restore + Ably 推播都會呼叫 addMsg）──
+  if (mid && _renderedMids.has(mid)) return msgId;
+  if (mid) _renderedMids.add(mid);
+  if (_renderedMids.size > 300) _renderedMids.delete(_renderedMids.values().next().value);
+  const row = document.createElement('div');
   row.id = msgId;
   row.className = 'msg-row' + (isAI ? ' ai-msg' : (isTeacher || name === ADMIN_PASSWORD) ? ' teacher-msg' : name === ADMIN2_PASSWORD ? ' admin2-msg' : '');
   if (isRestore) row.style.animation = 'none';
@@ -718,7 +978,6 @@ function addMsg(name, text, isEmoji, ts, own, isRestore, isAI, triggerId, mid, i
   nameEl.className = 'msg-name' + (own ? ' own' : '') + (isAI ? ' ai' : (isTeacher || name === ADMIN_PASSWORD) ? ' teacher' : name === ADMIN2_PASSWORD ? ' admin2' : '');
   nameEl.textContent = name; row.appendChild(nameEl);
 
-  // 身份標籤：老師快捷點評 或 yoko老師本人 → 老師；朱大帥哥0719 → 管理員
   if (isTeacher || name === ADMIN_PASSWORD) {
     const badge = document.createElement('span'); badge.className = 'teacher-badge'; badge.textContent = '老師'; row.appendChild(badge);
   } else if (name === ADMIN2_PASSWORD) {
@@ -755,28 +1014,66 @@ function flashRow(msgId) {
 function resetChat() {
   if (!confirm('確定要清空所有人的聊天室內容嗎？')) return;
   ablyChannel.publish('reset', { by: me }); clearChatUI();
+  // 同步清除後端 AI 記憶
+  fetch(`${BACKEND_URL}/api/reset-memory`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: SESSION_ID })
+  }).catch(() => {});
 }
-function clearChatUI() { document.getElementById('msgs').innerHTML = ''; localStorage.removeItem(STORAGE_KEY); sys('聊天室已重置'); }
+function clearChatUI() { document.getElementById('msgs').innerHTML = ''; localStorage.removeItem(STORAGE_KEY); _renderedMids.clear(); sys('聊天室已重置'); }
 function updateViewerCount() { const el = document.getElementById('viewerCount'); if (el) el.textContent = `觀看人數：${onlineUsers.size}`; }
 
-const STATE_LABELS = { idle: '待機中', live: '展演中', ended: '展演結束' };
-function applyShowState(state) {
+function applyShowState(state, isRestore) {
   const prevState = showState; showState = state; localStorage.setItem(SHOW_STATE_KEY, state);
-  if (state === 'live') { stats = { thumb:0,clap:0,fire:0,aiMsg:0,userMsg:0 }; statsActive = true; document.getElementById('statsPanel').classList.remove('visible'); }
-  else if (state === 'ended') { statsActive = false; if (prevState === 'live') renderStats(); }
-  else if (state === 'idle') { statsActive = false; document.getElementById('statsPanel').classList.remove('visible'); }
+  if (state === 'live') {
+    // ── 切換到展演中才重置統計，idle/ended 不重置，保留上一輪的 stats ──
+    stats = { thumb:0,clap:0,fire:0,aiMsg:0,userMsg:0 }; statsActive = true;
+    const sp = document.getElementById('statsPanel'); if (sp) sp.classList.remove('visible');
+    if (!isRestore) {
+      // ── 只有真正按下展演中才重置 session，刷新時不重置 ──
+      SESSION_ID = 'dlt-show-' + Date.now();
+      fetch(`${BACKEND_URL}/api/reset-memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: SESSION_ID })
+      }).catch(() => {});
+      syncAgentContext();
+      // ── 確保 context 到位：500ms 後再送一次，避免 loop 在第一次到達前就讀到空 state ──
+      setTimeout(() => syncAgentContext(), 500);
+    }
+  }
+  else if (state === 'ended') {
+    statsActive = false;
+    // ── 只要這輪有任何統計資料，不管 prevState 是什麼都顯示 ──
+    const hasStats = stats.thumb > 0 || stats.clap > 0 || stats.fire > 0 || stats.aiMsg > 0 || stats.userMsg > 0;
+    if (!isRestore && isAdmin2 && hasStats) renderStats();
+  }
+  else if (state === 'idle') {
+    statsActive = false;
+    const sp = document.getElementById('statsPanel'); if (sp) sp.classList.remove('visible');
+    bellNotifiedThisSession = false; // 展演結束/待機時重置，下次 live 可再通知
+  }
+  // ── 展演變成 live 時觸發鈴鐺通知 ──
+  if (state === 'live' && prevState !== 'live' && !isRestore && me) {
+    bellNotifiedThisSession = false;
+    checkBellNotify();
+  }
   const bar = document.getElementById('showStateBar'); const txt = document.getElementById('stateText');
-  const mi = document.getElementById('mi'); const sendBtn = document.getElementById('sendBtn'); const overlay = document.getElementById('idleOverlay');
-  if (!bar) return;
+  if (!bar || !txt) return;
+  // ── 永遠更新文字和樣式（登入前也要正確顯示）──
   bar.className = `show-state-bar ${state}`; txt.textContent = STATE_LABELS[state] || state;
-  if (me) document.getElementById('infoBar').classList.add('visible');
-  overlay.classList.toggle('visible', state === 'idle');
+  // ── 以下需要聊天室元素，登入前（chat 未顯示）跳過 ──
+  const mi = document.getElementById('mi'); const sendBtn = document.getElementById('sendBtn'); const overlay = document.getElementById('idleOverlay');
+  const ibar = document.querySelector('.ibar');
+  if (!mi || !sendBtn) return;
+  if (overlay) overlay.classList.toggle('visible', state === 'idle');
   const isEnded = state==='ended', isIdle = state==='idle', isManager = isAdmin||isAdmin2;
   mi.disabled = !isManager && (isEnded||isIdle); sendBtn.disabled = !isManager && (isEnded||isIdle);
   mi.placeholder = isEnded ? '展演已結束，無法發言' : isIdle ? '展演尚未開始…' : '傳送訊息…';
   document.querySelectorAll('.ebtn').forEach(b => b.disabled = !isManager && (isEnded||isIdle));
   document.querySelectorAll('.qbtn').forEach(b => b.disabled = !isManager && (isEnded||isIdle));
-  document.querySelector('.ibar').classList.toggle('ended', isEnded && !isManager);
+  if (ibar) ibar.classList.toggle('ended', isEnded && !isManager);
   if (isAdmin2) { ['idle','live','ended'].forEach(s => { const btn = document.getElementById('btn'+s.charAt(0).toUpperCase()+s.slice(1)); if(btn){btn.style.fontWeight=s===state?'900':'';btn.style.outline=s===state?'2px solid var(--ai-color)':'';} }); }
 }
 
@@ -792,7 +1089,7 @@ function renderStats() {
 }
 
 function setShowState(state) { applyShowState(state); if (ablyChannel) ablyChannel.publish('showstate', { state }); }
-function restoreShowState() { applyShowState(localStorage.getItem(SHOW_STATE_KEY) || 'idle'); }
+function restoreShowState() { applyShowState(localStorage.getItem(SHOW_STATE_KEY) || 'idle', true); }
 function applyScene(name) {
   const el = document.getElementById('sceneName'); if (!el) return;
   el.textContent = name && name.trim() ? name.trim() : '未設定';
@@ -800,21 +1097,444 @@ function applyScene(name) {
   if (me) document.getElementById('infoBar').classList.add('visible');
 }
 function restoreScene() { const saved = localStorage.getItem(SCENE_KEY)||''; applyScene(saved); if(isAdmin2) document.getElementById('sceneInput').value=saved; }
-function setScene() { const name=document.getElementById('sceneInput').value.trim(); applyScene(name); if(ablyChannel) ablyChannel.publish('scene',{name}); }
+function setScene() {
+  const name = document.getElementById('sceneInput').value.trim();
+  applyScene(name);
+  if (ablyChannel) ablyChannel.publish('scene', { name });
+  syncAgentContext();
+  if (isAdmin2) showAdminUpdateModal();
+}
+
+function showAdminUpdateModal() {
+  const group    = (document.getElementById('groupInput')    || {}).value || '（未設定）';
+  const scene    = (document.getElementById('sceneInput')    || {}).value || '（未設定）';
+  const delivery = (document.getElementById('roleDelivery')  || {}).value || '（未設定）';
+  const order    = (document.getElementById('roleOrder')     || {}).value || '（未設定）';
+  const reception= (document.getElementById('roleReception') || {}).value || '（未設定）';
+  const focus    = (document.getElementById('audienceFocusInput') || {}).value || '（未設定）';
+  const body = document.getElementById('adminUpdateModalBody');
+  if (body) {
+    body.innerHTML =
+      `組別：<span>${group}</span><br>` +
+      `幕次：<span>${scene}</span><br>` +
+      `送餐服務生：<span>${delivery}</span><br>` +
+      `點餐服務生：<span>${order}</span><br>` +
+      `櫃台接待：<span>${reception}</span><br>` +
+      `本幕觀眾注意重點：<span>${focus}</span>`;
+  }
+  document.getElementById('adminUpdateModal').classList.add('visible');
+}
+
+// ── 展演事件提示：teacher cue → /api/performance-signal（human-in-the-loop）──
+async function sendStageEvent(eventType, eventLabel) {
+  if (!isAdmin2) return;
+  try {
+    await fetch(`${BACKEND_URL}/api/performance-signal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: SESSION_ID,
+        signals: {
+          eventType,
+          eventLabel,
+          source:       'teacher_cue',
+          audienceFocus: localStorage.getItem(AUDIENCE_FOCUS_KEY) || '',
+          updatedAt:    Date.now(),
+        },
+      }),
+    });
+    console.log(`[StageEvent] 送出 eventType=${eventType}`);
+  } catch (e) {
+    console.warn('[StageEvent] 送出失敗:', e.message);
+  }
+}
+
+function closeAdminUpdateModal() {
+  document.getElementById('adminUpdateModal').classList.remove('visible');
+}
+
+// ══════════════════════════════════════════
+// ── Agent Decision Log 面板 ──
+// ══════════════════════════════════════════
+
+let logPanelOpen    = false;
+let logFilterValue  = '';       // 目前篩選關鍵字（快捷鈕或輸入框）
+let logPollingTimer = null;
+let logLastCount    = 0;        // 上次筆數，用來判斷是否要捲動到底
+
+function toggleLogPanel() {
+  logPanelOpen = !logPanelOpen;
+  document.getElementById('logPanel').classList.toggle('open', logPanelOpen);
+  if (logPanelOpen) {
+    fetchDecisionLog();
+    if (!logPollingTimer) logPollingTimer = setInterval(fetchDecisionLog, 5000);
+  } else {
+    clearInterval(logPollingTimer);
+    logPollingTimer = null;
+  }
+}
+
+function setLogFilter(keyword) {
+  logFilterValue = keyword;
+  // 同步輸入框
+  document.getElementById('logFilterInput').value = keyword;
+  // 更新按鈕 active 狀態
+  ['logBtnAll','logBtnSpeak','logBtnSilent','logBtnTeacher','logBtnPerf'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+  const map = { '': 'logBtnAll', 'speak': 'logBtnSpeak', 'silent': 'logBtnSilent', 'YOKO': 'logBtnTeacher', 'performance': 'logBtnPerf' };
+  if (map[keyword]) document.getElementById(map[keyword]).classList.add('active');
+  fetchDecisionLog();
+}
+
+function onLogFilterInput() {
+  logFilterValue = document.getElementById('logFilterInput').value.trim();
+  // 快捷鈕全部取消 active
+  ['logBtnAll','logBtnSpeak','logBtnSilent','logBtnTeacher','logBtnPerf'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+  if (!logFilterValue) document.getElementById('logBtnAll').classList.add('active');
+  clearTimeout(logPollingTimer);
+  logPollingTimer = setTimeout(() => {
+    fetchDecisionLog();
+    logPollingTimer = setInterval(fetchDecisionLog, 5000);
+  }, 400);
+}
+
+async function fetchDecisionLog() {
+  try {
+    const params = new URLSearchParams({ limit: 100, filter: logFilterValue });
+    const r = await fetch(`${BACKEND_URL}/api/decision-log?${params}`);
+    const d = await r.json();
+    renderLogEntries(d.entries || []);
+  } catch (e) {
+    console.warn('[LogPanel] fetch 失敗:', e.message);
+  }
+}
+
+async function clearDecisionLog() {
+  if (!confirm('確定要清除所有 Decision Log 嗎？')) return;
+  try {
+    await fetch(`${BACKEND_URL}/api/decision-log/clear`, { method: 'POST' });
+    logLastCount = 0;
+    document.getElementById('logEntries').innerHTML = '';
+    document.getElementById('logCount').textContent = '0 筆';
+  } catch (e) {
+    console.warn('[LogPanel] 清除失敗:', e.message);
+  }
+}
+
+function renderLogEntries(entries) {
+  const container = document.getElementById('logEntries');
+  const countEl   = document.getElementById('logCount');
+  if (!container) return;
+
+  const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 40;
+  const newCount   = entries.length;
+
+  container.innerHTML = entries.map(e => {
+    const ts       = e.timestamp ? e.timestamp.replace('T', ' ').replace('Z', '').slice(0, 19) : '';
+    const isSpeak  = e.shouldSpeak === true;
+    const isTeacher= e.teacherCooldownActive === true;
+    const isPerf   = e.hasPerformanceSignal === true;
+
+    // ── decisionType badge ──
+    const DT_LABEL = {
+      warmup: '暖場', performance_feedback: '表演回饋', teacher_override: '老師讓路',
+      cooldown: 'Cooldown', busy_chat: '聊天室熱鬧', no_need: '不需發話',
+      show_ended: '展演結束', no_audience: '無觀眾', error: '錯誤', unknown: '未知',
+    };
+    const DT_CLASS = {
+      warmup: 'dt-warmup', performance_feedback: 'dt-perf_fb', teacher_override: 'dt-teacher',
+      cooldown: 'dt-cooldown', busy_chat: 'dt-busy', no_need: 'dt-no_need',
+      show_ended: 'dt-no_need', no_audience: 'dt-no_need', error: 'dt-error', unknown: 'dt-unknown',
+    };
+    const dt = e.decisionType || 'unknown';
+    const dtBadge = `<span class="log-badge ${DT_CLASS[dt]||'dt-unknown'}">${DT_LABEL[dt]||dt}</span>`;
+
+    const speakBadge   = `<span class="log-badge ${isSpeak ? 'speak' : 'silent'}">${isSpeak ? '發話' : '靜默'}</span>`;
+    const teacherBadge = isTeacher ? `<span class="log-badge teacher">老師</span>` : '';
+    const perfBadge    = isPerf    ? `<span class="log-badge perf">表演訊號</span>` : '';
+
+    const msgLine  = isSpeak && e.message
+      ? `<div class="log-msg">💬 ${e.message}</div>` : '';
+    const metaLine = `<div class="log-meta">場景:${e.currentScene||'-'} 組:${e.group||'-'} 表演者:${e.keyPerformer||'-'} 觀眾:${e.audienceCount??'-'} 訊息:${e.recentMessageCount??'-'}則</div>`;
+
+    return `<div class="log-entry ${isSpeak ? 'speak' : 'silent'}">
+      <div><span class="log-ts">${ts}</span>${speakBadge}${dtBadge}${teacherBadge}${perfBadge}</div>
+      <div class="log-reason">${e.reason || ''}</div>
+      ${msgLine}
+      ${metaLine}
+    </div>`;
+  }).join('');
+
+  countEl.textContent = `${newCount} 筆`;
+
+  // 若原本在底部或有新資料，自動捲到最新
+  if (isAtBottom || newCount > logLastCount) {
+    container.scrollTop = container.scrollHeight;
+  }
+  logLastCount = newCount;
+}
 function applyPerformer(name) {
   const el = document.getElementById('performerName'); if (!el) return;
   el.textContent = name && name.trim() ? name.trim() : '尚未指定';
   localStorage.setItem(PERFORMER_KEY, name ? name.trim() : '');
   if (me) document.getElementById('infoBar').classList.add('visible');
+  updateSubGroup(name ? name.trim() : '');
 }
-function restorePerformer() { const saved=localStorage.getItem(PERFORMER_KEY)||''; applyPerformer(saved); if(isAdmin2) document.getElementById('performerInput').value=saved; }
-function setPerformer() { const name=document.getElementById('performerInput').value.trim(); applyPerformer(name); if(ablyChannel) ablyChannel.publish('performer',{name}); }
+function restorePerformer() { const saved=localStorage.getItem(GROUP_KEY)||localStorage.getItem(PERFORMER_KEY)||''; applyPerformer(saved); }
+function setPerformer() {}
+function restoreRoles() {
+  if (!isAdmin2) return;
+  const g = localStorage.getItem(GROUP_KEY)||'';
+  const d = localStorage.getItem(ROLE_DELIVERY_KEY)||'';
+  const o = localStorage.getItem(ROLE_ORDER_KEY)||'';
+  const r = localStorage.getItem(ROLE_RECEPTION_KEY)||'';
+  const f = localStorage.getItem(AUDIENCE_FOCUS_KEY)||'';
+  document.getElementById('groupInput').value = g;
+  document.getElementById('roleDelivery').value = d;
+  document.getElementById('roleOrder').value = o;
+  document.getElementById('roleReception').value = r;
+  document.getElementById('audienceFocusInput').value = f;
+  saveRoles();
+}
+function saveRoles() {
+  const g = (document.getElementById('groupInput')||{}).value||'';
+  const d = (document.getElementById('roleDelivery')||{}).value||'';
+  const o = (document.getElementById('roleOrder')||{}).value||'';
+  const r = (document.getElementById('roleReception')||{}).value||'';
+  const f = (document.getElementById('audienceFocusInput')||{}).value||'';
+  localStorage.setItem(GROUP_KEY, g.trim());
+  localStorage.setItem(ROLE_DELIVERY_KEY, d.trim());
+  localStorage.setItem(ROLE_ORDER_KEY, o.trim());
+  localStorage.setItem(ROLE_RECEPTION_KEY, r.trim());
+  localStorage.setItem(AUDIENCE_FOCUS_KEY, f.trim());
+  // 同步更新 performerName 顯示（用組別）
+  applyPerformer(g.trim());
+  // ── 廣播組別給所有人（讓其他頁面的 banner 即時更新）──
+  if (ablyChannel) ablyChannel.publish('performer', { name: g.trim() });
+  syncAgentContext();
+}
 function updateStatusBar() { document.getElementById('statusBar').classList.toggle('visible',!!me); document.getElementById('recBadge').classList.toggle('inactive',!isRecording); }
 function sys(t) { const msgs=document.getElementById('msgs'); const el=document.createElement('div'); el.className='sys'; el.textContent=t; msgs.appendChild(el); msgs.scrollTop=msgs.scrollHeight; }
 function ar(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
 
+// ══════════════════════════════════════════
+// ── 訂閱功能 ──
+// ══════════════════════════════════════════
+
+// ── 顯示通知泡泡 ──
+// ── 顯示通知泡泡 ──
+function showSubNotify(msg) {
+  const el = document.getElementById('subNotify');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_subNotifyTimer);
+  if (msg) _subNotifyTimer = setTimeout(() => el.classList.remove('show'), 4000);
+}
+function clearSubNotify() {
+  const el = document.getElementById('subNotify');
+  if (!el) return;
+  clearTimeout(_subNotifyTimer);
+  el.classList.remove('show');
+}
+
+// ── 更新訂閱區塊 UI（根據目前組別 + 個人訂閱狀態）──
+function updateSubBar() {
+  const bar     = document.getElementById('subBar');
+  const groupEl = document.getElementById('subGroupName');
+  const countEl = document.getElementById('subFanCount');
+  const btnSub    = document.getElementById('btnSub');
+  const btnCancel = document.getElementById('btnSubCancel');
+  const btnBell   = document.getElementById('btnBell');
+  if (!bar) return;
+
+  if (!subCurrentGroup || !me) { bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
+  groupEl.textContent = subCurrentGroup;
+
+  const isSub = !!subMyGroups[subCurrentGroup];
+  const bellOn = isSub && subMyGroups[subCurrentGroup].bell;
+
+  // 訂閱按鈕狀態
+  btnSub.className = 'btn-sub ' + (isSub ? 'subed' : 'unsub');
+  btnSub.textContent = isSub ? '✅ 已訂閱' : '🔴 訂閱';
+
+  // 子按鈕：只有已訂閱且再次點擊訂閱按鈕才展開，這裡預設隱藏
+  btnCancel.classList.remove('visible');
+  btnBell.classList.remove('visible');
+
+  // 鈴鐺狀態
+  btnBell.classList.toggle('on', bellOn);
+  btnBell.textContent = bellOn ? '🔔 鈴鐺開啟' : '🔔 小鈴鐺';
+
+  // 粉絲數（從 server 拿）
+  fetchFanCount(subCurrentGroup).then(count => {
+    if (countEl) countEl.textContent = `粉絲 ${count} 人`;
+  });
+}
+
+// ── 拉取粉絲數 ──
+async function fetchFanCount(group) {
+  try {
+    const r = await fetch(`${BACKEND_URL}/api/fan-count?group=${encodeURIComponent(group)}`);
+    const d = await r.json();
+    return d.count || 0;
+  } catch { return 0; }
+}
+
+// ── 登入後從 server 載入個人訂閱狀態 ──
+async function loadMySubscriptions() {
+  if (!me) return;
+  try {
+    const r = await fetch(`${BACKEND_URL}/api/subscribe-status?name=${encodeURIComponent(me)}`);
+    const d = await r.json();
+    subMyGroups = d.subscriptions || {};
+  } catch { subMyGroups = {}; }
+  // 訂閱狀態載入後，用目前組別重新刷新 UI
+  updateSubGroup(subCurrentGroup);
+}
+
+// ── 組別變更時更新訂閱區塊（由 applyPerformer 觸發）──
+function updateSubGroup(group) {
+  subCurrentGroup = group || '';
+  // 先清除舊 banner，再根據新組別判斷是否要通知
+  clearSubNotify();
+  updateSubBar();
+  // 組別切換後重新判斷鈴鐺（不受 bellNotifiedThisSession 限制，因為是新組別）
+  checkBellNotify(true);
+}
+
+// ── 點擊訂閱按鈕 ──
+function handleSubscribe() {
+  const btnCancel = document.getElementById('btnSubCancel');
+  const btnBell   = document.getElementById('btnBell');
+  const isSub = !!subMyGroups[subCurrentGroup];
+
+  if (!isSub) {
+    // 尚未訂閱 → 執行訂閱
+    doSubscribe();
+  } else {
+    // 已訂閱 → 展開子按鈕
+    const showing = btnCancel.classList.contains('visible');
+    if (showing) {
+      btnCancel.classList.remove('visible');
+      btnBell.classList.remove('visible');
+    } else {
+      btnCancel.classList.add('visible');
+      btnBell.classList.add('visible');
+    }
+  }
+}
+
+async function doSubscribe() {
+  if (!me || !subCurrentGroup) return;
+  try {
+    const r = await fetch(`${BACKEND_URL}/api/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: me, group: subCurrentGroup }),
+    });
+    const d = await r.json();
+    subMyGroups[subCurrentGroup] = { bell: false };
+    document.getElementById('subFanCount').textContent = `粉絲 ${d.count} 人`;
+    updateSubBar();
+  } catch { showSubNotify('訂閱失敗，請稍後再試'); }
+}
+
+// ── 取消訂閱 ──
+async function handleUnsubscribe() {
+  if (!me || !subCurrentGroup) return;
+  try {
+    const r = await fetch(`${BACKEND_URL}/api/unsubscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: me, group: subCurrentGroup }),
+    });
+    const d = await r.json();
+    delete subMyGroups[subCurrentGroup];
+    document.getElementById('subFanCount').textContent = `粉絲 ${d.count} 人`;
+    updateSubBar();
+  } catch { showSubNotify('取消訂閱失敗，請稍後再試'); }
+}
+
+// ── 切換鈴鐺 ──
+async function handleBell() {
+  if (!me || !subCurrentGroup || !subMyGroups[subCurrentGroup]) return;
+  const newBell = !subMyGroups[subCurrentGroup].bell;
+  try {
+    await fetch(`${BACKEND_URL}/api/toggle-bell`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: me, group: subCurrentGroup, bell: newBell }),
+    });
+    subMyGroups[subCurrentGroup].bell = newBell;
+    const btnBell = document.getElementById('btnBell');
+    btnBell.classList.toggle('on', newBell);
+    btnBell.textContent = newBell ? '🔔 鈴鐺開啟' : '🔔 小鈴鐺';
+    if (newBell) showSubNotify('🔔 小鈴鐺已開啟！展演開始時會通知你');
+  } catch { showSubNotify('設定失敗，請稍後再試'); }
+}
+
+// ── 鈴鐺通知：連線後若 showState=live 且有開鈴鐺 → 通知一次 ──
+// ── 鈴鐺通知：只檢查當前組別，force=true 時忽略 bellNotifiedThisSession ──
+function checkBellNotify(force) {
+  if (!force && bellNotifiedThisSession) return;
+  if (showState !== 'live') return;
+  if (!subCurrentGroup) return;
+  const sub = subMyGroups[subCurrentGroup];
+  if (!sub || !sub.bell) return;
+  bellNotifiedThisSession = true;
+  showSubNotify('🔔 精彩的展演正在進行中唷！走過路過千萬不要錯過~~');
+}
+
+// ── Ably fancount 事件：即時更新粉絲數顯示 ──
+function onFanCountUpdate(group, count) {
+  if (group === subCurrentGroup) {
+    const el = document.getElementById('subFanCount');
+    if (el) el.textContent = `粉絲 ${count} 人`;
+  }
+}
+
+// ── 頁面載入時就 restore 展演狀態，不等登入（讓 info bar 永遠正確）──
+// 放在所有函式定義後，確保 STATE_LABELS 和 applyShowState 都已定義
+// ── 未登入時 restore banner 狀態；登入後 showChat() 裡已處理，不重複 restore ──
+if (!me) {
+  applyShowState(localStorage.getItem(SHOW_STATE_KEY) || 'idle', true);
+  applyScene(localStorage.getItem(SCENE_KEY) || '');
+  applyPerformer(localStorage.getItem(GROUP_KEY) || localStorage.getItem(PERFORMER_KEY) || '');
+}
+
+// ── 未登入時也能即時接收展演狀態變化（讓輸入暱稱頁面的 banner 即時更新）──
+(function initGlobalListener() {
+  if (typeof Ably === 'undefined') return;
+  const ablyGlobal = new Ably.Realtime({ key: ABLY_KEY });
+  const globalCh = ablyGlobal.channels.get(CH);
+  globalCh.subscribe('showstate', m => {
+    if (!ablyChannel) applyShowState(m.data.state); // 未登入時才用這個，登入後由 initAbly 的訂閱處理
+  });
+  globalCh.subscribe('scene', m => {
+    if (!ablyChannel) applyScene(m.data.name);
+  });
+  globalCh.subscribe('performer', m => {
+    if (!ablyChannel) applyPerformer(m.data.name);
+  });
+  // 登入後這個全域連線就不再使用（initAbly 會建立自己的連線）
+})();
+
 window.addEventListener('resize', adjustChatPadding);
-window.addEventListener('beforeunload', () => { if (ablyChannel && me) ablyChannel.publish('presence', { type: 'leave', name: me }); });
+// ── 離開偵測：pagehide 時同步通知 server + 發 Ably leave ──
+window.addEventListener('pagehide', () => {
+  if (!me) return;
+  // sendBeacon 是瀏覽器保證會送出的非同步請求，即使分頁關閉也能送到
+  navigator.sendBeacon(
+    `${BACKEND_URL}/api/leave`,
+    new Blob([JSON.stringify({ name: me })], { type: 'application/json' })
+  );
+  if (ablyChannel) ablyChannel.publish('presence', { type: 'leave', name: me });
+});
 </script>
 </body>
 </html>

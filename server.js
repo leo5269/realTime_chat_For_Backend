@@ -341,18 +341,16 @@ const DECISION_INTERVAL = 12000;
 async function runDecisionLoop() {
   if (agentLoopRunning) return; // 已在執行中，跳過這次避免競爭
   agentLoopRunning = true;
-  try {
+
   const sessionId = currentSessionId;
   const state = getAgentState(sessionId);
 
-  if (!agentLoopActive) return;
+  if (!agentLoopActive) { agentLoopRunning = false; return; }
 
-  // ── 只有非展演中且所有人離線才停止 loop ──
-  // 展演中（showState=live）即使 serverOnlineUsers 是空的也繼續跑
-  // 避免 server 重啟後 serverOnlineUsers 尚未恢復就誤停
   if (serverOnlineUsers.size === 0 && state.showState !== 'live') {
     console.log('[Agent] 所有人已離線且非展演中，停止 loop');
     stopAgentLoop();
+    agentLoopRunning = false;
     return;
   }
 

@@ -420,6 +420,11 @@ async function runDecisionLoop() {
         mid: 'msg-agent-' + Date.now(),
       });
       console.log(`[Agent] 發話 action=${decision.action} reason=${decision.reason}`);
+      // ── 發話後清除 stage event，避免同一事件下一輪再次觸發 ──
+      state.scenePerformanceSignals.eventType  = null;
+      state.scenePerformanceSignals.eventLabel = null;
+      state.scenePerformanceSignals.source     = null;
+      state.scenePerformanceSignals.updatedAt  = null;
     } else {
       console.log(`[Agent] 靜默：${decision.reason}`);
     }

@@ -520,6 +520,10 @@ app.post('/api/performance-signal', (req, res) => {
     // console log：有 eventType 時顯示 stage event，否則顯示 sensor signal
     if (signals.eventType) {
       console.log(`[StageEvent] source=${signals.source || 'unknown'} eventType=${signals.eventType} label=${signals.eventLabel || ''}`);
+      // ── stage event 立刻觸發一次 decision，不等 loop 自然跑到 ──
+      if (agentLoopActive) {
+        setTimeout(() => runDecisionLoop(), 100);
+      }
     } else {
       console.log(`[SensorSignal] updatedAt=${signals.updatedAt} keys=${Object.keys(signals).join(',')}`);
     }

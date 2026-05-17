@@ -971,7 +971,6 @@ function addMsg(name, text, isEmoji, ts, own, isRestore, isAI, triggerId, mid, i
   const row = document.createElement('div');
   row.id = msgId;
   row.className = 'msg-row' + (isAI ? ' ai-msg' : (isTeacher || name === ADMIN_PASSWORD) ? ' teacher-msg' : name === ADMIN2_PASSWORD ? ' admin2-msg' : '');
-  if (action === 'award') row.className = 'msg-row ai-msg'; // award 用 ai-msg 樣式
   if (isRestore) row.style.animation = 'none';
 
   const timeEl = document.createElement('span'); timeEl.className = 'msg-time'; timeEl.textContent = ts || ''; row.appendChild(timeEl);

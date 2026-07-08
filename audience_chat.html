@@ -1137,7 +1137,7 @@ function showAdminUpdateModal() {
 }
 
 // ── 每幕對應的展演事件按鈕（根據劇本學習目標設計）──
-const SCENE_STAGE_EVENTS = {
+var SCENE_STAGE_EVENTS = {
   '第一幕': [
     { type: 'narration_started',  label: '解說開始，請觀眾注意開場介紹重點',         icon: '📢', name: '解說開始' },
     { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚台詞',       icon: '🔇', name: '聲音偏小' },
@@ -1188,7 +1188,7 @@ const SCENE_STAGE_EVENTS = {
 };
 
 // ── 預設按鈕（幕次未設定時顯示）──
-const DEFAULT_STAGE_EVENTS = [
+var DEFAULT_STAGE_EVENTS = [
   { type: 'narration_started',  label: '解說開始，請觀眾注意本幕重點',     icon: '📢', name: '解說開始' },
   { type: 'key_action_done',    label: '學生完成了本幕關鍵動作',            icon: '✅', name: '關鍵動作完成' },
   { type: 'voice_low',          label: '學生聲音偏小，觀眾可能聽不清楚',   icon: '🔇', name: '聲音偏小' },
